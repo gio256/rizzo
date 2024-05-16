@@ -1,0 +1,11 @@
+[package]
+name = "riz"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+plonky2 = "0.2.2"
+plonky2_maybe_rayon = "0.2.0"
+plonky2_util = "0.2.0"
+starky = "0.4.0"
+hashbrown = "0.14.0"
