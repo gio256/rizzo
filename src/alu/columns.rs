@@ -5,14 +5,21 @@ pub(crate) const ALU_COL_MAP: AluCols<usize> = make_col_map();
 
 #[repr(C)]
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub(crate) struct AluCols<T> {
+pub(crate) struct AluOpCols<T> {
     pub f_add: T,
     pub f_sub: T,
     pub f_lt: T,
+}
+
+#[repr(C)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(crate) struct AluCols<T> {
+    pub op: AluOpCols<T>,
     pub in0: T,
     pub in1: T,
     pub out: T,
     pub aux: T,
+    pub f_imm: T,
 }
 
 const fn make_col_map() -> AluCols<usize> {

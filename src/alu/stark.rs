@@ -8,11 +8,50 @@ use plonky2::hash::hash_types::RichField;
 use plonky2::iop::ext_target::ExtensionTarget;
 use plonky2::plonk::circuit_builder::CircuitBuilder;
 use starky::constraint_consumer::{ConstraintConsumer, RecursiveConstraintConsumer};
+use starky::cross_table_lookup::TableWithColumns;
 use starky::evaluation_frame::{StarkEvaluationFrame, StarkFrame};
+use starky::lookup::{Column, Filter};
 use starky::stark::Stark;
 
 use crate::alu::addcy;
-use crate::alu::columns::{AluCols, N_ALU_COLS};
+use crate::alu::columns::{AluCols, ALU_COL_MAP, N_ALU_COLS};
+use crate::stark::Table;
+use crate::vm::opcode::Opcode;
+
+const ALU_OPS: [(usize, u8); 3] = [
+    (ALU_COL_MAP.op.f_add, Opcode::ADD as u8),
+    (ALU_COL_MAP.op.f_sub, Opcode::SUB as u8),
+    (ALU_COL_MAP.op.f_lt, Opcode::SLT as u8),
+];
+
+fn ctl_data<F: Field>() -> Vec<Column<F>> {
+    // define a column that evaluates to the opcode of the selected instruction
+    let ops = ALU_OPS.iter().map(|&(f, op)| (f, F::from_canonical_u8(op)));
+    let op_col = Column::linear_combination(ops);
+
+    let cols = Column::singles([
+        ALU_COL_MAP.f_imm,
+        ALU_COL_MAP.in0,
+        ALU_COL_MAP.in1,
+        ALU_COL_MAP.out,
+    ]);
+    std::iter::once(op_col).chain(cols).collect()
+}
+
+pub(crate) fn ctl_looked_reg<F: Field>() -> TableWithColumns<F> {
+    let f_not_imm =
+        Column::linear_combination_with_constant(vec![(ALU_COL_MAP.f_imm, F::NEG_ONE)], F::ONE);
+    let f_alu = Column::sum(ALU_OPS.iter().map(|&(f, _)| f));
+    let filter = Filter::new(vec![(f_alu, f_not_imm)], Default::default());
+    TableWithColumns::new(Table::Alu as usize, ctl_data(), filter)
+}
+
+pub(crate) fn ctl_looked_imm<F: Field>() -> TableWithColumns<F> {
+    let f_imm = Column::single(ALU_COL_MAP.f_imm);
+    let f_alu = Column::sum(ALU_OPS.iter().map(|&(f, _)| f));
+    let filter = Filter::new(vec![(f_alu, f_imm)], Default::default());
+    TableWithColumns::new(Table::Alu as usize, ctl_data(), filter)
+}
 
 #[derive(Clone, Copy, Default)]
 pub(crate) struct AluStark<F, const D: usize> {
@@ -20,9 +59,9 @@ pub(crate) struct AluStark<F, const D: usize> {
 }
 
 fn eval_all<P: PackedField>(lv: &AluCols<P>, nv: &AluCols<P>, cc: &mut ConstraintConsumer<P>) {
-    let f_add = lv.f_add;
-    let f_sub = lv.f_sub;
-    let f_lt = lv.f_lt;
+    let f_add = lv.op.f_add;
+    let f_sub = lv.op.f_sub;
+    let f_lt = lv.op.f_lt;
     cc.constraint(f_add * (f_add - P::ONES));
     cc.constraint(f_sub * (f_sub - P::ONES));
     cc.constraint(f_lt * (f_lt - P::ONES));

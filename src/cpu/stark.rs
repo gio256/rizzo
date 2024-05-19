@@ -8,12 +8,14 @@ use plonky2::hash::hash_types::RichField;
 use plonky2::iop::ext_target::ExtensionTarget;
 use plonky2::plonk::circuit_builder::CircuitBuilder;
 use starky::constraint_consumer::{ConstraintConsumer, RecursiveConstraintConsumer};
+use starky::cross_table_lookup::TableWithColumns;
 use starky::evaluation_frame::{StarkEvaluationFrame, StarkFrame};
 use starky::lookup::{Column, Filter, Lookup};
 use starky::stark::Stark;
 
 use crate::cpu::columns::{CpuCols, CPU_COL_MAP, N_CPU_COLS, N_MEM_CHANNELS};
 use crate::cpu::{alu, clock, control_flow, decode, flag, jump, membus, memio, reg};
+use crate::stark::Table;
 
 fn mem_timestamp<F: Field>(channel: usize) -> Column<F> {
     let n = F::from_canonical_usize(N_MEM_CHANNELS);
@@ -29,6 +31,41 @@ pub(crate) fn ctl_looking_mem<F: Field>(channel: usize) -> Vec<Column<F>> {
 }
 pub(crate) fn ctl_filter_mem<F: Field>(channel: usize) -> Filter<F> {
     Filter::new_simple(Column::single(CPU_COL_MAP.membus[channel].f_on))
+}
+
+pub(crate) fn ctl_looking_alu_reg<F: Field>() -> TableWithColumns<F> {
+    let cols = Column::singles([
+        CPU_COL_MAP.opcode,
+        CPU_COL_MAP.f_imm,
+        CPU_COL_MAP.rs1_channel().val,
+        CPU_COL_MAP.rs2_channel().val,
+        CPU_COL_MAP.rd_channel().val,
+    ])
+    .collect();
+
+    let f_not_imm =
+        Column::linear_combination_with_constant(vec![(CPU_COL_MAP.f_imm, F::NEG_ONE)], F::ONE);
+    let f_alu = Column::single(CPU_COL_MAP.op.f_alu);
+    let filter = Filter::new(vec![(f_not_imm, f_alu)], Default::default());
+
+    TableWithColumns::new(Table::Cpu as usize, cols, filter)
+}
+
+pub(crate) fn ctl_looking_alu_imm<F: Field>() -> TableWithColumns<F> {
+    let cols = Column::singles([
+        CPU_COL_MAP.opcode,
+        CPU_COL_MAP.f_imm,
+        CPU_COL_MAP.rs1_channel().val,
+        CPU_COL_MAP.imm,
+        CPU_COL_MAP.rd_channel().val,
+    ])
+    .collect();
+
+    let f_imm = Column::single(CPU_COL_MAP.f_imm);
+    let f_alu = Column::single(CPU_COL_MAP.op.f_alu);
+    let filter = Filter::new(vec![(f_imm, f_alu)], Default::default());
+
+    TableWithColumns::new(Table::Cpu as usize, cols, filter)
 }
 
 fn eval_all<P: PackedField>(lv: &CpuCols<P>, nv: &CpuCols<P>, cc: &mut ConstraintConsumer<P>) {

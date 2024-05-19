@@ -5,6 +5,7 @@ pub mod cpu;
 pub mod mem;
 pub mod stark;
 pub mod util;
+pub mod vm;
 pub mod word;
 
 mod ctl;
