@@ -6,7 +6,7 @@ use plonky2::iop::ext_target::ExtensionTarget;
 use plonky2::plonk::circuit_builder::CircuitBuilder;
 use starky::constraint_consumer::{ConstraintConsumer, RecursiveConstraintConsumer};
 
-use crate::cpu::arith::eval_add;
+use crate::alu::eval_add;
 use crate::cpu::columns::{CpuCols, CPU_COL_MAP};
 
 const INC_PC_OPS: [usize; 2] = [CPU_COL_MAP.op.f_alu, CPU_COL_MAP.op.f_lb];

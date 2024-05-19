@@ -6,8 +6,8 @@ use plonky2::iop::ext_target::ExtensionTarget;
 use plonky2::plonk::circuit_builder::CircuitBuilder;
 use starky::constraint_consumer::{ConstraintConsumer, RecursiveConstraintConsumer};
 
+use crate::alu::eval_add;
 use crate::cpu::columns::CpuCols;
-use crate::cpu::arith::eval_add;
 use crate::cpu::control_flow::INSTRUCTION_BYTES;
 
 pub(crate) fn eval<P: PackedField>(
