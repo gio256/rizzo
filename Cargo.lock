@@ -420,6 +420,7 @@ dependencies = [
  "plonky2_maybe_rayon",
  "plonky2_util",
  "starky",
+ "static_assertions",
 ]
 
 [[package]]
