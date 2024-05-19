@@ -3,21 +3,27 @@ use core::ops::{Deref, DerefMut, Index, IndexMut};
 
 use crate::word::Word;
 
-pub const N_MEM_COLS: usize = core::mem::size_of::<MemCols<u8>>();
+pub(crate) const N_MEM_COLS: usize = core::mem::size_of::<MemCols<u8>>();
+pub(crate) const MEM_COL_MAP: MemCols<usize> = make_col_map();
 
 #[repr(C)]
 #[derive(Clone, Copy, Eq, PartialEq, Debug)]
-pub struct MemCols<T> {
-    pub time: T,
-    pub f_real: T,
+pub(crate) struct MemCols<T> {
+    pub f_on: T,
     pub f_rw: T,
+    pub time: T,
     pub adr_seg: T,
     pub adr_virt: T,
     pub val: T,
+
+    pub f_seg_fst_diff: T,
+    pub f_virt_fst_diff: T,
 }
 
-pub const MEM_COL_MAP: MemCols<usize> = make_mem_col_map();
-
+const fn make_col_map() -> MemCols<usize> {
+    let arr = crate::util::indices_arr::<N_MEM_COLS>();
+    unsafe { core::mem::transmute::<[usize; N_MEM_COLS], MemCols<usize>>(arr) }
+}
 impl<T: Copy> Borrow<MemCols<T>> for [T; N_MEM_COLS] {
     fn borrow(&self) -> &MemCols<T> {
         unsafe { core::mem::transmute(self) }
@@ -56,10 +62,6 @@ where
         let arr: &mut [T; N_MEM_COLS] = self.borrow_mut();
         <[T] as IndexMut<I>>::index_mut(arr, i)
     }
-}
-const fn make_mem_col_map() -> MemCols<usize> {
-    let arr = crate::util::indices_arr::<N_MEM_COLS>();
-    unsafe { core::mem::transmute::<[usize; N_MEM_COLS], MemCols<usize>>(arr) }
 }
 
 impl<T: Copy> Deref for MemCols<T> {

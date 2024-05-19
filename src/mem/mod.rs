@@ -1,5 +1,7 @@
-mod columns;
-mod stark;
+pub mod columns;
+pub mod stark;
+
+pub(crate) use stark::{ctl_filter, ctl_looked};
 
 const SEG_SCALE_FACTOR: usize = 8;
 
