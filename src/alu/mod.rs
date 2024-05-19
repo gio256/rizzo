@@ -1,5 +1,5 @@
-mod addcy;
-mod columns;
-mod stark;
+pub mod addcy;
+pub mod columns;
+pub mod stark;
 
-pub(crate) use addcy::{eval_add, eval_lt, eval_sub};
+pub(crate) use addcy::{eval_add, eval_gt, eval_lt, eval_sub};
