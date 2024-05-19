@@ -12,13 +12,13 @@ use starky::evaluation_frame::{StarkEvaluationFrame, StarkFrame};
 use starky::lookup::{Column, Filter, Lookup};
 use starky::stark::Stark;
 
-use crate::cpu::columns::{CpuCols, CPU_COL_MAP, N_MEM_CHANNELS, N_CPU_COLS};
+use crate::cpu::columns::{CpuCols, CPU_COL_MAP, N_CPU_COLS, N_MEM_CHANNELS};
 use crate::cpu::{clock, control_flow, decode, jump, membus, reg};
 
 fn mem_timestamp<F: Field>(channel: usize) -> Column<F> {
-    let n_channels = F::from_canonical_usize(N_MEM_CHANNELS);
-    let chan_idx = F::from_canonical_usize(channel);
-    Column::linear_combination_with_constant([(CPU_COL_MAP.clock, n_channels)], chan_idx)
+    let n = F::from_canonical_usize(N_MEM_CHANNELS);
+    let ch = F::from_canonical_usize(channel);
+    Column::linear_combination_with_constant([(CPU_COL_MAP.clock, n)], ch)
 }
 
 pub(crate) fn ctl_data_mem<F: Field>(channel: usize) -> Vec<Column<F>> {

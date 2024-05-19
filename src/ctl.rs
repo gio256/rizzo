@@ -4,19 +4,19 @@ use core::ops::Deref;
 
 use plonky2::field::extension::{Extendable, FieldExtension};
 use plonky2::field::packed::PackedField;
-use plonky2::field::types::Field;
 use plonky2::field::polynomial::PolynomialValues;
+use plonky2::field::types::Field;
 use plonky2::hash::hash_types::RichField;
 use plonky2::iop::ext_target::ExtensionTarget;
 use plonky2::plonk::circuit_builder::CircuitBuilder;
 use starky::config::StarkConfig;
 use starky::constraint_consumer::{ConstraintConsumer, RecursiveConstraintConsumer};
+use starky::cross_table_lookup::{get_ctl_vars_from_proofs, verify_cross_table_lookups};
 use starky::cross_table_lookup::{CrossTableLookup, TableIdx, TableWithColumns};
 use starky::evaluation_frame::{StarkEvaluationFrame, StarkFrame};
+use starky::lookup::{Column, Filter};
 use starky::stark::Stark;
-use starky::lookup::{Filter, Column};
 use starky::util::trace_rows_to_poly_values;
-use starky::cross_table_lookup::{get_ctl_vars_from_proofs, verify_cross_table_lookups};
 use starky::verifier::verify_stark_proof_with_challenges;
 
 const N_A_COLS: usize = core::mem::size_of::<ACols<u8>>();
@@ -61,7 +61,8 @@ fn ctl_looking_cols<F: Field>() -> Vec<Column<F>> {
 }
 
 fn ctl_looking_filter<F: Field>() -> Filter<F> {
-    Filter::new_simple(Column::sum([0, 1]))
+    let not_col0 = Column::linear_combination_with_constant(vec![(0, F::NEG_ONE)], F::ONE);
+    Filter::new_simple(not_col0)
 }
 
 fn ctl_looked<F: Field>() -> TableWithColumns<F> {
@@ -75,7 +76,7 @@ fn ctl_looked_cols<F: Field>() -> Vec<Column<F>> {
 }
 
 fn ctl_looked_filter<F: Field>() -> Filter<F> {
-    Filter::new_simple(Column::sum([0, 1]))
+    Filter::new_simple(Column::constant(F::ONE))
 }
 
 fn ctl<F: Field>() -> CrossTableLookup<F> {
@@ -84,10 +85,7 @@ fn ctl<F: Field>() -> CrossTableLookup<F> {
 
 impl<F: RichField + Extendable<D>, const D: usize> AStark<F, D> {
     fn trace_row_major() -> Vec<[F; N_A_COLS]> {
-        vec![
-            [F::ZERO, F::ZERO, F::ZERO],
-            [F::ONE, F::ZERO, F::ONE],
-        ]
+        vec![[F::ZERO, F::ZERO, F::ZERO], [F::ZERO, F::ONE, F::ONE]]
     }
     fn trace() -> Vec<PolynomialValues<F>> {
         let rows = Self::trace_row_major();
@@ -97,17 +95,13 @@ impl<F: RichField + Extendable<D>, const D: usize> AStark<F, D> {
 
 impl<F: RichField + Extendable<D>, const D: usize> BStark<F, D> {
     fn trace_row_major() -> Vec<[F; N_B_COLS]> {
-        vec![
-            [F::ZERO, F::ZERO, F::ONE],
-            [F::ONE, F::ZERO, F::ONE],
-        ]
+        vec![[F::ZERO, F::ONE, F::ONE], [F::ZERO, F::ZERO, F::ZERO]]
     }
     fn trace() -> Vec<PolynomialValues<F>> {
         let rows = Self::trace_row_major();
         trace_rows_to_poly_values(rows)
     }
 }
-
 
 impl<T: Copy> Borrow<ACols<T>> for [T; N_A_COLS] {
     fn borrow(&self) -> &ACols<T> {
@@ -245,9 +239,9 @@ impl<F: RichField + Extendable<D>, const D: usize> Stark<F, D> for BStark<F, D> 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use plonky2::field::goldilocks_field::GoldilocksField;
-    use starky::cross_table_lookup::debug_utils::{check_ctls};
     use hashbrown::HashMap;
+    use plonky2::field::goldilocks_field::GoldilocksField;
+    use starky::cross_table_lookup::debug_utils::check_ctls;
 
     type F = GoldilocksField;
     const D: usize = 2;

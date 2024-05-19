@@ -12,12 +12,7 @@ pub(crate) fn eval<P: PackedField>(
     nv: &CpuCols<P>,
     cc: &mut ConstraintConsumer<P>,
 ) {
-    for i in *CPU_COL_MAP.op {
-        let flag = lv[i];
-        cc.constraint(flag * (flag - P::ONES));
-    }
-    let flag_sum: P = CPU_COL_MAP.op.iter().map(|&i| lv[i]).sum();
-    cc.constraint(flag_sum * (flag_sum - P::ONES));
+    todo!()
 }
 
 pub(crate) fn eval_circuit<F: RichField + Extendable<D>, const D: usize>(

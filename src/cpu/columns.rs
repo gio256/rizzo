@@ -1,6 +1,8 @@
 use core::borrow::{Borrow, BorrowMut};
 use core::ops::{Deref, DerefMut, Index, IndexMut};
 
+use static_assertions::const_assert;
+
 pub const N_MEM_CHANNELS: usize = 3;
 
 #[repr(C)]
@@ -20,6 +22,11 @@ pub const N_MEM_CHAN_COLS: usize = core::mem::size_of::<MemChannel<u8>>();
 pub struct OpCols<T> {
     pub f_alu: T,
     pub f_lb: T,
+    pub f_lh: T,
+    pub f_lw: T,
+    pub f_sb: T,
+    pub f_sh: T,
+    pub f_sw: T,
     pub f_jal: T,
     pub f_jalr: T,
     pub f_beq: T,
@@ -39,19 +46,29 @@ pub struct CpuCols<T> {
     pub clock: T,
     pub pc: T,
     pub op: OpCols<T>,
-    // pub op1: T,
-    // pub op2: T,
-    // pub op_w: T,
-    // pub imm1: T,
-    // pub imm2: T,
     pub rs1: T,
     pub rs2: T,
     pub rd: T,
     pub imm: T,
-    // pub rs1_val: MemChannel<T>,
-    // pub rs2_val: MemChannel<T>,
-    // pub rd_val: MemChannel<T>,
+    pub f_aux0: T, // TODO: CpuGeneralColumnsView union
+    pub f_aux1: T, // TODO: CpuGeneralColumnsView union
+    pub f_branch: T,
     pub membus: [MemChannel<T>; N_MEM_CHANNELS],
+}
+
+impl<T> CpuCols<T> {
+    pub fn rd_channel(&self) -> &MemChannel<T> {
+        const_assert!(N_MEM_CHANNELS > 0);
+        &self.membus[0]
+    }
+    pub fn rs1_channel(&self) -> &MemChannel<T> {
+        const_assert!(N_MEM_CHANNELS > 1);
+        &self.membus[1]
+    }
+    pub fn rs2_channel(&self) -> &MemChannel<T> {
+        const_assert!(N_MEM_CHANNELS > 2);
+        &self.membus[2]
+    }
 }
 
 pub const N_CPU_COLS: usize = core::mem::size_of::<CpuCols<u8>>();
