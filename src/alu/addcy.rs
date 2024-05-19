@@ -16,9 +16,9 @@ pub(crate) fn generate<F: PrimeField64>(lv: &mut AluCols<F>, filter: usize, left
     lv.in0 = F::from_canonical_u32(left);
     lv.in1 = F::from_canonical_u32(right);
 
-    let f_add = ALU_COL_MAP.f_add;
-    let f_sub = ALU_COL_MAP.f_sub;
-    let f_lt = ALU_COL_MAP.f_lt;
+    let f_add = ALU_COL_MAP.op.f_add;
+    let f_sub = ALU_COL_MAP.op.f_sub;
+    let f_lt = ALU_COL_MAP.op.f_lt;
 
     match filter {
         f_add => {
@@ -36,7 +36,7 @@ pub(crate) fn generate<F: PrimeField64>(lv: &mut AluCols<F>, filter: usize, left
             lv.aux = F::from_canonical_u32(diff);
             lv.out = F::from_canonical_u32(cy as u32);
         }
-        _ => panic!("bad instruction filter")
+        _ => panic!("bad instruction filter"),
     };
 }
 

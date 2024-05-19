@@ -9,35 +9,41 @@ use starky::evaluation_frame::StarkFrame;
 use starky::stark::Stark;
 
 use crate::cpu::columns::N_MEM_CHANNELS;
-use crate::{cpu, mem};
+use crate::{alu, cpu, mem};
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub enum Table {
-    Alu = 0,
-    Cpu = 1,
-    Mem = 2,
-}
-impl Deref for Table {
-    type Target = TableIdx;
-    fn deref(&self) -> &Self::Target {
-        [&0, &1, &2][*self as TableIdx]
-    }
+    Alu,
+    Cpu,
+    Mem,
 }
 
 fn all_cross_table_lookups<F: Field>() -> Vec<CrossTableLookup<F>> {
-    vec![ctl_mem()]
+    vec![ctl_alu_reg(), ctl_alu_imm(), ctl_mem()]
+}
+
+fn ctl_alu_reg<F: Field>() -> CrossTableLookup<F> {
+    let looking = vec![cpu::ctl_looking_alu_reg()];
+    let looked = alu::ctl_looked_reg();
+    CrossTableLookup::new(looking, looked)
+}
+
+fn ctl_alu_imm<F: Field>() -> CrossTableLookup<F> {
+    let looking = vec![cpu::ctl_looking_alu_imm()];
+    let looked = alu::ctl_looked_imm();
+    CrossTableLookup::new(looking, looked)
 }
 
 fn ctl_mem<F: Field>() -> CrossTableLookup<F> {
-    let cpu = (0..N_MEM_CHANNELS)
+    let looking = (0..N_MEM_CHANNELS)
         .map(|ch| {
             TableWithColumns::new(
-                *Table::Cpu,
+                Table::Cpu as usize,
                 cpu::ctl_looking_mem(ch),
                 cpu::ctl_filter_mem(ch),
             )
         })
         .collect();
-    let looked = TableWithColumns::new(*Table::Mem, mem::ctl_looked(), mem::ctl_filter());
-    CrossTableLookup::new(cpu, looked)
+    let looked = TableWithColumns::new(Table::Mem as usize, mem::ctl_looked(), mem::ctl_filter());
+    CrossTableLookup::new(looking, looked)
 }

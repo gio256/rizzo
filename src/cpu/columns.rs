@@ -48,6 +48,7 @@ pub(crate) struct CpuCols<T> {
     pub clock: T,
     pub pc: T,
     pub op: OpCols<T>,
+    pub opcode: T,
     pub rs1: T,
     pub rs2: T,
     pub rd: T,

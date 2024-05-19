@@ -10,4 +10,4 @@ pub mod memio;
 pub mod reg;
 pub mod stark;
 
-pub(crate) use stark::{ctl_filter_mem, ctl_looking_mem};
+pub(crate) use stark::{ctl_filter_mem, ctl_looking_alu_imm, ctl_looking_alu_reg, ctl_looking_mem};
