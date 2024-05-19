@@ -3,6 +3,7 @@ use core::marker::PhantomData;
 
 use plonky2::field::extension::{Extendable, FieldExtension};
 use plonky2::field::packed::PackedField;
+use plonky2::field::types::{Field, PrimeField64};
 use plonky2::hash::hash_types::RichField;
 use plonky2::iop::ext_target::ExtensionTarget;
 use plonky2::plonk::circuit_builder::CircuitBuilder;
@@ -17,16 +18,47 @@ pub struct AluStark<F, const D: usize> {
     _unused: PhantomData<F>,
 }
 
-fn eval_all<P: PackedField>(lv: &AluCols<P>, nv: &AluCols<P>, cc: &mut ConstraintConsumer<P>) {
-    let is_add = lv.is_add;
-    let is_sub = lv.is_sub;
-    cc.constraint(is_add * (is_add - P::ONES));
-    cc.constraint(is_sub * (is_sub - P::ONES));
-    cc.constraint(is_add * (lv.out - lv.in0 - lv.in1));
-    cc.constraint(is_sub * (lv.out - lv.in0 + lv.in1));
+/// The multiplicative inverse of (1 << 32).
+const GOLDILOCKS_INVERSE_U32_MAX: u64 = 18446744065119617026;
+
+/// Constrains x + y == z + cy * 2^32
+fn eval_addcy<P: PackedField>(cc: &mut ConstraintConsumer<P>, filter: P, x: P, y: P, z: P, cy: P) {
+    let base = P::Scalar::from_canonical_u64(1u64 << 32);
+    let base_inv = P::Scalar::from_canonical_u64(GOLDILOCKS_INVERSE_U32_MAX);
+    debug_assert!(base * base_inv == P::Scalar::ONE);
+
+    // diff in {0, base}
+    let diff = x + y - z;
+    cc.constraint(filter * diff * (diff - base));
+
+    // did_cy in {0, 1}
+    let did_cy = diff * base_inv;
+    cc.constraint(filter * cy * (cy - P::ONES));
+    cc.constraint(filter * (did_cy - cy));
 }
 
-pub(crate) fn eval_all_circuit<F: RichField + Extendable<D>, const D: usize>(
+fn eval_all<P: PackedField>(lv: &AluCols<P>, nv: &AluCols<P>, cc: &mut ConstraintConsumer<P>) {
+    let f_add = lv.f_add;
+    let f_sub = lv.f_sub;
+    let f_lt = lv.f_lt;
+    cc.constraint(f_add * (f_add - P::ONES));
+    cc.constraint(f_sub * (f_sub - P::ONES));
+    cc.constraint(f_lt * (f_lt - P::ONES));
+
+    let in0 = lv.in0;
+    let in1 = lv.in1;
+    let out = lv.out;
+    let aux = lv.aux;
+
+    // constrain in0 + in1 == out + aux * 2^32
+    eval_addcy(cc, f_add, in0, in1, out, aux);
+    // constrain in1 + out == in0 + aux * 2^32
+    eval_addcy(cc, f_sub, in1, out, in0, aux);
+    // constrain in1 + aux == in0 + out * 2^32
+    eval_addcy(cc, f_lt, in1, aux, in0, out);
+}
+
+fn eval_all_circuit<F: RichField + Extendable<D>, const D: usize>(
     cb: &mut CircuitBuilder<F, D>,
     lv: &AluCols<ExtensionTarget<D>>,
     nv: &AluCols<ExtensionTarget<D>>,
