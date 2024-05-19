@@ -11,11 +11,11 @@ use starky::constraint_consumer::{ConstraintConsumer, RecursiveConstraintConsume
 use starky::evaluation_frame::{StarkEvaluationFrame, StarkFrame};
 use starky::stark::Stark;
 
+use crate::alu::addcy;
 use crate::alu::columns::{AluCols, N_ALU_COLS};
-use crate::alu::{eval_add, eval_lt, eval_sub};
 
 #[derive(Clone, Copy, Default)]
-pub struct AluStark<F, const D: usize> {
+pub(crate) struct AluStark<F, const D: usize> {
     _unused: PhantomData<F>,
 }
 
@@ -32,9 +32,9 @@ fn eval_all<P: PackedField>(lv: &AluCols<P>, nv: &AluCols<P>, cc: &mut Constrain
     let out = lv.out;
     let aux = lv.aux;
 
-    eval_add(cc, f_add, in0, in1, out, aux);
-    eval_sub(cc, f_sub, in0, in1, out, aux);
-    eval_lt(cc, f_lt, in0, in1, out, aux);
+    addcy::eval_add(cc, f_add, in0, in1, out, aux);
+    addcy::eval_sub(cc, f_sub, in0, in1, out, aux);
+    addcy::eval_lt(cc, f_lt, in0, in1, out, aux);
 }
 
 fn eval_all_circuit<F: RichField + Extendable<D>, const D: usize>(
@@ -66,7 +66,6 @@ impl<F: RichField + Extendable<D>, const D: usize> Stark<F, D> for AluStark<F, D
         let local: &AluCols<P> = local.borrow();
         let next: &[P; N_ALU_COLS] = frame.get_next_values().try_into().unwrap();
         let next: &AluCols<P> = next.borrow();
-
         eval_all(local, next, cc);
     }
 
@@ -80,7 +79,6 @@ impl<F: RichField + Extendable<D>, const D: usize> Stark<F, D> for AluStark<F, D
         let local: &AluCols<ExtensionTarget<D>> = local.borrow();
         let next: &[ExtensionTarget<D>; N_ALU_COLS] = frame.get_next_values().try_into().unwrap();
         let next: &AluCols<ExtensionTarget<D>> = next.borrow();
-
         eval_all_circuit(cb, local, next, cc);
     }
 
