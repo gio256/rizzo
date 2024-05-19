@@ -13,7 +13,7 @@ use starky::lookup::{Column, Filter, Lookup};
 use starky::stark::Stark;
 
 use crate::cpu::columns::{CpuCols, CPU_COL_MAP, N_CPU_COLS, N_MEM_CHANNELS};
-use crate::cpu::{clock, control_flow, decode, jump, membus, reg};
+use crate::cpu::{alu, clock, control_flow, decode, flag, jump, membus, memio, reg};
 
 fn mem_timestamp<F: Field>(channel: usize) -> Column<F> {
     let n = F::from_canonical_usize(N_MEM_CHANNELS);
@@ -32,12 +32,12 @@ fn eval_all<P: PackedField>(lv: &CpuCols<P>, nv: &CpuCols<P>, cc: &mut Constrain
     clock::eval(lv, nv, cc);
     control_flow::eval(lv, nv, cc);
     membus::eval(lv, nv, cc);
+    memio::eval(lv, nv, cc);
     decode::eval(lv, nv, cc);
     jump::eval(lv, nv, cc);
+    flag::eval(lv, nv, cc);
+    alu::eval(lv, nv, cc);
     reg::eval(lv, nv, cc);
-    // let in0 = lv.membus[0].val;
-    // let in1 = lv.membus[1].val;
-    // let out = nv.membus[0].val;
 }
 
 pub(crate) fn eval_all_circuit<F: RichField + Extendable<D>, const D: usize>(
@@ -49,8 +49,11 @@ pub(crate) fn eval_all_circuit<F: RichField + Extendable<D>, const D: usize>(
     clock::eval_circuit(cb, lv, nv, cc);
     control_flow::eval_circuit(cb, lv, nv, cc);
     membus::eval_circuit(cb, lv, nv, cc);
+    memio::eval_circuit(cb, lv, nv, cc);
     decode::eval_circuit(cb, lv, nv, cc);
     jump::eval_circuit(cb, lv, nv, cc);
+    flag::eval_circuit(cb, lv, nv, cc);
+    alu::eval_circuit(cb, lv, nv, cc);
     reg::eval_circuit(cb, lv, nv, cc);
 }
 

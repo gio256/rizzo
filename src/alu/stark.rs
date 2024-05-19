@@ -12,29 +12,11 @@ use starky::evaluation_frame::{StarkEvaluationFrame, StarkFrame};
 use starky::stark::Stark;
 
 use crate::alu::columns::{AluCols, N_ALU_COLS};
+use crate::alu::{eval_add, eval_lt, eval_sub};
 
 #[derive(Clone, Copy, Default)]
 pub struct AluStark<F, const D: usize> {
     _unused: PhantomData<F>,
-}
-
-/// The multiplicative inverse of (1 << 32).
-const GOLDILOCKS_INVERSE_U32_MAX: u64 = 18446744065119617026;
-
-/// Constrains x + y == z + cy * 2^32
-fn eval_addcy<P: PackedField>(cc: &mut ConstraintConsumer<P>, filter: P, x: P, y: P, z: P, cy: P) {
-    let base = P::Scalar::from_canonical_u64(1u64 << 32);
-    let base_inv = P::Scalar::from_canonical_u64(GOLDILOCKS_INVERSE_U32_MAX);
-    debug_assert!(base * base_inv == P::Scalar::ONE);
-
-    // diff in {0, base}
-    let diff = x + y - z;
-    cc.constraint(filter * diff * (diff - base));
-
-    // did_cy in {0, 1}
-    let did_cy = diff * base_inv;
-    cc.constraint(filter * cy * (cy - P::ONES));
-    cc.constraint(filter * (did_cy - cy));
 }
 
 fn eval_all<P: PackedField>(lv: &AluCols<P>, nv: &AluCols<P>, cc: &mut ConstraintConsumer<P>) {
@@ -50,12 +32,9 @@ fn eval_all<P: PackedField>(lv: &AluCols<P>, nv: &AluCols<P>, cc: &mut Constrain
     let out = lv.out;
     let aux = lv.aux;
 
-    // constrain in0 + in1 == out + aux * 2^32
-    eval_addcy(cc, f_add, in0, in1, out, aux);
-    // constrain in1 + out == in0 + aux * 2^32
-    eval_addcy(cc, f_sub, in1, out, in0, aux);
-    // constrain in1 + aux == in0 + out * 2^32
-    eval_addcy(cc, f_lt, in1, aux, in0, out);
+    eval_add(cc, f_add, in0, in1, out, aux);
+    eval_sub(cc, f_sub, in0, in1, out, aux);
+    eval_lt(cc, f_lt, in0, in1, out, aux);
 }
 
 fn eval_all_circuit<F: RichField + Extendable<D>, const D: usize>(

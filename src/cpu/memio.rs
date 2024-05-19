@@ -5,14 +5,10 @@ use plonky2::iop::ext_target::ExtensionTarget;
 use plonky2::plonk::circuit_builder::CircuitBuilder;
 use starky::constraint_consumer::{ConstraintConsumer, RecursiveConstraintConsumer};
 
+use crate::alu::eval_add;
 use crate::cpu::columns::CpuCols;
-use crate::cpu::arith::eval_add;
 
-fn eval_load<P: PackedField>(
-    lv: &CpuCols<P>,
-    nv: &CpuCols<P>,
-    cc: &mut ConstraintConsumer<P>,
-) {
+fn eval_load<P: PackedField>(lv: &CpuCols<P>, nv: &CpuCols<P>, cc: &mut ConstraintConsumer<P>) {
     // rd = M[rs1+imm]
     let f_lw = lv.op.f_lw;
 
@@ -36,11 +32,7 @@ fn eval_load<P: PackedField>(
     eval_add(cc, f_lw, ch_rs1.val, lv.imm, ch_load.adr_virt, lv.f_aux1);
 }
 
-fn eval_store<P: PackedField>(
-    lv: &CpuCols<P>,
-    nv: &CpuCols<P>,
-    cc: &mut ConstraintConsumer<P>,
-) {
+fn eval_store<P: PackedField>(lv: &CpuCols<P>, nv: &CpuCols<P>, cc: &mut ConstraintConsumer<P>) {
     // M[rs1+imm] = rs2
     let f_sw = lv.op.f_sw;
 

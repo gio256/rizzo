@@ -50,6 +50,7 @@ pub struct CpuCols<T> {
     pub rs2: T,
     pub rd: T,
     pub imm: T,
+    pub f_imm: T,
     pub f_aux0: T, // TODO: CpuGeneralColumnsView union
     pub f_aux1: T, // TODO: CpuGeneralColumnsView union
     pub f_branch: T,
