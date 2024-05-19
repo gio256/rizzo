@@ -9,7 +9,11 @@ use starky::constraint_consumer::{ConstraintConsumer, RecursiveConstraintConsume
 use crate::alu::eval_add;
 use crate::cpu::columns::{CpuCols, CPU_COL_MAP};
 
-const INC_PC_OPS: [usize; 2] = [CPU_COL_MAP.op.f_alu, CPU_COL_MAP.op.f_lb];
+const INC_PC_OPS: [usize; 3] = [
+    CPU_COL_MAP.op.f_alu,
+    CPU_COL_MAP.op.f_lw,
+    CPU_COL_MAP.op.f_sw,
+];
 pub(crate) const INSTRUCTION_BYTES: usize = 4;
 
 pub(crate) fn eval<P: PackedField>(

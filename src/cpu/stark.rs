@@ -21,11 +21,14 @@ fn mem_timestamp<F: Field>(channel: usize) -> Column<F> {
     Column::linear_combination_with_constant([(CPU_COL_MAP.clock, n)], ch)
 }
 
-pub(crate) fn ctl_data_mem<F: Field>(channel: usize) -> Vec<Column<F>> {
+pub(crate) fn ctl_looking_mem<F: Field>(channel: usize) -> Vec<Column<F>> {
     let ch = CPU_COL_MAP.membus[channel];
     let mut cols: Vec<_> = Column::singles([ch.f_rw, ch.adr_seg, ch.adr_virt, ch.val]).collect();
     cols.push(mem_timestamp(channel));
     cols
+}
+pub(crate) fn ctl_filter_mem<F: Field>(channel: usize) -> Filter<F> {
+    Filter::new_simple(Column::single(CPU_COL_MAP.membus[channel].f_on))
 }
 
 fn eval_all<P: PackedField>(lv: &CpuCols<P>, nv: &CpuCols<P>, cc: &mut ConstraintConsumer<P>) {
@@ -40,7 +43,7 @@ fn eval_all<P: PackedField>(lv: &CpuCols<P>, nv: &CpuCols<P>, cc: &mut Constrain
     reg::eval(lv, nv, cc);
 }
 
-pub(crate) fn eval_all_circuit<F: RichField + Extendable<D>, const D: usize>(
+fn eval_all_circuit<F: RichField + Extendable<D>, const D: usize>(
     cb: &mut CircuitBuilder<F, D>,
     lv: &CpuCols<ExtensionTarget<D>>,
     nv: &CpuCols<ExtensionTarget<D>>,

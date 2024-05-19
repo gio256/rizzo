@@ -1,11 +1,11 @@
 #![allow(unused)]
 
-mod alu;
-mod cpu;
-mod mem;
-mod stark;
-mod util;
-mod word;
+pub mod alu;
+pub mod cpu;
+pub mod mem;
+pub mod stark;
+pub mod util;
+pub mod word;
 
 mod ctl;
 

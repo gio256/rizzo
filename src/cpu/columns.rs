@@ -3,11 +3,12 @@ use core::ops::{Deref, DerefMut, Index, IndexMut};
 
 use static_assertions::const_assert;
 
-pub const N_MEM_CHANNELS: usize = 3;
+pub(crate) const N_MEM_CHANNELS: usize = 3;
+pub(crate) const N_MEM_CHANNEL_COLS: usize = core::mem::size_of::<MemChannel<u8>>();
 
 #[repr(C)]
 #[derive(Clone, Copy, Eq, PartialEq, Debug)]
-pub struct MemChannel<T> {
+pub(crate) struct MemChannel<T> {
     pub f_on: T,
     pub f_rw: T,
     pub adr_seg: T,
@@ -15,11 +16,11 @@ pub struct MemChannel<T> {
     pub val: T,
 }
 
-pub const N_MEM_CHAN_COLS: usize = core::mem::size_of::<MemChannel<u8>>();
+pub(crate) const N_OP_COLS: usize = core::mem::size_of::<OpCols<u8>>();
 
 #[repr(C)]
 #[derive(Clone, Copy, Eq, PartialEq, Debug)]
-pub struct OpCols<T> {
+pub(crate) struct OpCols<T> {
     pub f_alu: T,
     pub f_lb: T,
     pub f_lh: T,
@@ -38,11 +39,12 @@ pub struct OpCols<T> {
     pub f_lui: T,
 }
 
-pub const N_OP_COLS: usize = core::mem::size_of::<OpCols<u8>>();
+pub(crate) const N_CPU_COLS: usize = core::mem::size_of::<CpuCols<u8>>();
+pub(crate) const CPU_COL_MAP: CpuCols<usize> = make_col_map();
 
 #[repr(C)]
 #[derive(Clone, Copy, Eq, PartialEq, Debug)]
-pub struct CpuCols<T> {
+pub(crate) struct CpuCols<T> {
     pub clock: T,
     pub pc: T,
     pub op: OpCols<T>,
@@ -72,9 +74,10 @@ impl<T> CpuCols<T> {
     }
 }
 
-pub const N_CPU_COLS: usize = core::mem::size_of::<CpuCols<u8>>();
-pub const CPU_COL_MAP: CpuCols<usize> = make_cpu_col_map();
-
+const fn make_col_map() -> CpuCols<usize> {
+    let arr = crate::util::indices_arr::<N_CPU_COLS>();
+    unsafe { core::mem::transmute::<[usize; N_CPU_COLS], CpuCols<usize>>(arr) }
+}
 impl<T: Copy> Borrow<CpuCols<T>> for [T; N_CPU_COLS] {
     fn borrow(&self) -> &CpuCols<T> {
         unsafe { core::mem::transmute(self) }
@@ -113,10 +116,6 @@ where
         let arr: &mut [T; N_CPU_COLS] = self.borrow_mut();
         <[T] as IndexMut<I>>::index_mut(arr, i)
     }
-}
-const fn make_cpu_col_map() -> CpuCols<usize> {
-    let arr = crate::util::indices_arr::<N_CPU_COLS>();
-    unsafe { core::mem::transmute::<[usize; N_CPU_COLS], CpuCols<usize>>(arr) }
 }
 
 impl<T: Copy> Deref for OpCols<T> {
