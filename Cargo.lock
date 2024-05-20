@@ -419,6 +419,7 @@ dependencies = [
  "plonky2",
  "plonky2_maybe_rayon",
  "plonky2_util",
+ "rand",
  "starky",
  "static_assertions",
 ]

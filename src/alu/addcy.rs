@@ -16,28 +16,36 @@ pub(crate) fn generate<F: PrimeField64>(lv: &mut AluCols<F>, filter: usize, left
     lv.in0 = F::from_canonical_u32(left);
     lv.in1 = F::from_canonical_u32(right);
 
-    let f_add = ALU_COL_MAP.op.f_add;
-    let f_sub = ALU_COL_MAP.op.f_sub;
-    let f_lt = ALU_COL_MAP.op.f_lt;
-
-    match filter {
-        f_add => {
-            let (res, cy) = left.overflowing_add(right);
-            lv.aux = F::from_canonical_u32(cy as u32);
-            lv.out = F::from_canonical_u32(res);
-        }
-        f_sub => {
-            let (diff, cy) = left.overflowing_sub(right);
-            lv.aux = F::from_canonical_u32(cy as u32);
-            lv.out = F::from_canonical_u32(diff);
-        }
-        f_lt => {
-            let (diff, cy) = left.overflowing_sub(right);
-            lv.aux = F::from_canonical_u32(diff);
-            lv.out = F::from_canonical_u32(cy as u32);
-        }
-        _ => panic!("bad instruction filter"),
+    if filter == ALU_COL_MAP.op.f_add {
+        let (res, cy) = left.overflowing_add(right);
+        lv.aux = F::from_canonical_u32(cy as u32);
+        lv.out = F::from_canonical_u32(res);
+    } else if filter == ALU_COL_MAP.op.f_sub {
+        let (diff, cy) = left.overflowing_sub(right);
+        lv.aux = F::from_canonical_u32(cy as u32);
+        lv.out = F::from_canonical_u32(diff);
+    } else if filter == ALU_COL_MAP.op.f_lt {
+        let (diff, cy) = left.overflowing_sub(right);
+        lv.aux = F::from_canonical_u32(diff);
+        lv.out = F::from_canonical_u32(cy as u32);
+    } else {
+        panic!("bad instruction filter")
     };
+}
+
+pub(crate) fn eval<P: PackedField>(lv: &AluCols<P>, cc: &mut ConstraintConsumer<P>) {
+    let f_add = lv.op.f_add;
+    let f_sub = lv.op.f_sub;
+    let f_lt = lv.op.f_lt;
+
+    let in0 = lv.in0;
+    let in1 = lv.in1;
+    let out = lv.out;
+    let aux = lv.aux;
+
+    eval_add(cc, f_add, in0, in1, out, aux);
+    eval_sub(cc, f_sub, in0, in1, out, aux);
+    eval_lt(cc, f_lt, in0, in1, out, aux);
 }
 
 /// Constrains x + y == z + cy * 2^32
@@ -114,4 +122,118 @@ pub(crate) fn eval_gt<P: PackedField>(
 ) {
     // constrain right + diff == left + out * 2^32
     eval_addcy(cc, filter, left, diff, right, out)
+}
+
+#[cfg(test)]
+mod tests {
+    use core::borrow::BorrowMut;
+    use plonky2::field::goldilocks_field::GoldilocksField;
+    use plonky2::field::types::Sample;
+    use rand::{Rng, SeedableRng};
+
+    use crate::alu::columns::N_ALU_COLS;
+
+    use super::*;
+
+    type F = GoldilocksField;
+
+    fn constraint_consumer() -> ConstraintConsumer<F> {
+        ConstraintConsumer::new(
+            vec![GoldilocksField(2), GoldilocksField(3), GoldilocksField(5)],
+            F::ONE,
+            F::ONE,
+            F::ONE,
+        )
+    }
+
+    #[test]
+    fn eval_not_addcy() {
+        let mut rng = rand::thread_rng();
+        let mut lv = [F::default(); N_ALU_COLS].map(|_| F::sample(&mut rng));
+        let lv: &mut AluCols<F> = lv.borrow_mut();
+
+        lv.op.f_add = F::ZERO;
+        lv.op.f_sub = F::ZERO;
+        lv.op.f_lt = F::ZERO;
+
+        let mut cc = constraint_consumer();
+        eval(lv, &mut cc);
+        for acc in cc.accumulators() {
+            assert_eq!(acc, F::ZERO);
+        }
+    }
+
+    #[test]
+    fn generate_eval_add() {
+        let mut rng = rand::thread_rng();
+        let mut lv = [F::default(); N_ALU_COLS].map(|_| F::sample(&mut rng));
+        let lv: &mut AluCols<F> = lv.borrow_mut();
+
+        lv.op.f_add = F::ONE;
+        lv.op.f_sub = F::ZERO;
+        lv.op.f_lt = F::ZERO;
+
+        let left: u32 = rng.gen();
+        let right: u32 = rng.gen();
+        generate(lv, ALU_COL_MAP.op.f_add, left, right);
+
+        let mut cc = constraint_consumer();
+        eval(lv, &mut cc);
+        for acc in cc.accumulators() {
+            assert_eq!(acc, F::ZERO);
+        }
+
+        let (expect, cy) = left.overflowing_add(right);
+        assert_eq!(lv.out, F::from_canonical_u32(expect));
+        assert_eq!(lv.aux, F::from_canonical_u32(cy as u32));
+    }
+
+    #[test]
+    fn generate_eval_sub() {
+        let mut rng = rand::thread_rng();
+        let mut lv = [F::default(); N_ALU_COLS].map(|_| F::sample(&mut rng));
+        let lv: &mut AluCols<F> = lv.borrow_mut();
+
+        lv.op.f_add = F::ZERO;
+        lv.op.f_sub = F::ONE;
+        lv.op.f_lt = F::ZERO;
+
+        let left: u32 = rng.gen();
+        let right: u32 = rng.gen();
+        generate(lv, ALU_COL_MAP.op.f_sub, left, right);
+
+        let mut cc = constraint_consumer();
+        eval(lv, &mut cc);
+        for acc in cc.accumulators() {
+            assert_eq!(acc, F::ZERO);
+        }
+
+        let (expect, cy) = left.overflowing_sub(right);
+        assert_eq!(lv.out, F::from_canonical_u32(expect));
+        assert_eq!(lv.aux, F::from_canonical_u32(cy as u32));
+    }
+
+    #[test]
+    fn generate_eval_lt() {
+        let mut rng = rand::thread_rng();
+        let mut lv = [F::default(); N_ALU_COLS].map(|_| F::sample(&mut rng));
+        let lv: &mut AluCols<F> = lv.borrow_mut();
+
+        lv.op.f_add = F::ZERO;
+        lv.op.f_sub = F::ZERO;
+        lv.op.f_lt = F::ONE;
+
+        let left: u32 = rng.gen();
+        let right: u32 = rng.gen();
+        generate(lv, ALU_COL_MAP.op.f_lt, left, right);
+
+        let mut cc = constraint_consumer();
+        eval(lv, &mut cc);
+        for acc in cc.accumulators() {
+            assert_eq!(acc, F::ZERO);
+        }
+
+        let expect = left < right;
+        assert_eq!(lv.out, F::from_canonical_u32(expect as u32));
+    }
 }

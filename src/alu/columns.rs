@@ -19,7 +19,6 @@ pub(crate) struct AluCols<T> {
     pub in1: T,
     pub out: T,
     pub aux: T,
-    pub f_imm: T,
 }
 
 const fn make_col_map() -> AluCols<usize> {
