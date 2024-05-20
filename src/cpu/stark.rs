@@ -23,20 +23,18 @@ fn mem_timestamp<F: Field>(channel: usize) -> Column<F> {
     Column::linear_combination_with_constant([(CPU_COL_MAP.clock, n)], ch)
 }
 
-pub(crate) fn ctl_looking_mem<F: Field>(channel: usize) -> Vec<Column<F>> {
+pub(crate) fn ctl_looking_mem<F: Field>(channel: usize) -> TableWithColumns<F> {
     let ch = CPU_COL_MAP.membus[channel];
     let mut cols: Vec<_> = Column::singles([ch.f_rw, ch.adr_seg, ch.adr_virt, ch.val]).collect();
     cols.push(mem_timestamp(channel));
-    cols
-}
-pub(crate) fn ctl_filter_mem<F: Field>(channel: usize) -> Filter<F> {
-    Filter::new_simple(Column::single(CPU_COL_MAP.membus[channel].f_on))
+
+    let filter = Filter::new_simple(Column::single(CPU_COL_MAP.membus[channel].f_on));
+    TableWithColumns::new(Table::Cpu as usize, cols, filter)
 }
 
 pub(crate) fn ctl_looking_alu_reg<F: Field>() -> TableWithColumns<F> {
     let cols = Column::singles([
         CPU_COL_MAP.opcode,
-        CPU_COL_MAP.f_imm,
         CPU_COL_MAP.rs1_channel().val,
         CPU_COL_MAP.rs2_channel().val,
         CPU_COL_MAP.rd_channel().val,
@@ -46,7 +44,7 @@ pub(crate) fn ctl_looking_alu_reg<F: Field>() -> TableWithColumns<F> {
     let f_not_imm =
         Column::linear_combination_with_constant(vec![(CPU_COL_MAP.f_imm, F::NEG_ONE)], F::ONE);
     let f_alu = Column::single(CPU_COL_MAP.op.f_alu);
-    let filter = Filter::new(vec![(f_not_imm, f_alu)], Default::default());
+    let filter = Filter::new(vec![(f_not_imm, f_alu)], vec![]);
 
     TableWithColumns::new(Table::Cpu as usize, cols, filter)
 }
@@ -54,7 +52,6 @@ pub(crate) fn ctl_looking_alu_reg<F: Field>() -> TableWithColumns<F> {
 pub(crate) fn ctl_looking_alu_imm<F: Field>() -> TableWithColumns<F> {
     let cols = Column::singles([
         CPU_COL_MAP.opcode,
-        CPU_COL_MAP.f_imm,
         CPU_COL_MAP.rs1_channel().val,
         CPU_COL_MAP.imm,
         CPU_COL_MAP.rd_channel().val,
@@ -63,7 +60,7 @@ pub(crate) fn ctl_looking_alu_imm<F: Field>() -> TableWithColumns<F> {
 
     let f_imm = Column::single(CPU_COL_MAP.f_imm);
     let f_alu = Column::single(CPU_COL_MAP.op.f_alu);
-    let filter = Filter::new(vec![(f_imm, f_alu)], Default::default());
+    let filter = Filter::new(vec![(f_imm, f_alu)], vec![]);
 
     TableWithColumns::new(Table::Cpu as usize, cols, filter)
 }

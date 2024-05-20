@@ -8,24 +8,26 @@ use plonky2::hash::hash_types::RichField;
 use plonky2::iop::ext_target::ExtensionTarget;
 use plonky2::plonk::circuit_builder::CircuitBuilder;
 use starky::constraint_consumer::{ConstraintConsumer, RecursiveConstraintConsumer};
+use starky::cross_table_lookup::TableWithColumns;
 use starky::evaluation_frame::{StarkEvaluationFrame, StarkFrame};
 use starky::lookup::{Column, Filter, Lookup};
 use starky::stark::Stark;
 
 use crate::mem::columns::{MemCols, MEM_COL_MAP, N_MEM_COLS};
+use crate::stark::Table;
 
-pub(crate) fn ctl_looked<F: Field>() -> Vec<Column<F>> {
-    Column::singles([
+pub(crate) fn ctl_looked<F: Field>() -> TableWithColumns<F> {
+    let cols = Column::singles([
         MEM_COL_MAP.f_rw,
         MEM_COL_MAP.adr_seg,
         MEM_COL_MAP.adr_virt,
         MEM_COL_MAP.val,
         MEM_COL_MAP.time,
     ])
-    .collect()
-}
-pub(crate) fn ctl_filter<F: Field>() -> Filter<F> {
-    Filter::new_simple(Column::single(MEM_COL_MAP.f_on))
+    .collect();
+
+    let filter = Filter::new_simple(Column::single(MEM_COL_MAP.f_on));
+    TableWithColumns::new(Table::Mem as usize, cols, filter)
 }
 
 fn eval_all<P: PackedField>(lv: &MemCols<P>, nv: &MemCols<P>, cc: &mut ConstraintConsumer<P>) {
