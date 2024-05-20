@@ -24,33 +24,19 @@ const ALU_OPS: [(usize, u8); 3] = [
     (ALU_COL_MAP.op.f_lt, Opcode::SLT as u8),
 ];
 
-fn ctl_data<F: Field>() -> Vec<Column<F>> {
-    // define a column that evaluates to the opcode of the selected instruction
+pub(crate) fn ctl_looked<F: Field>() -> TableWithColumns<F> {
+    // the first column evaluates to the opcode of the selected instruction
     let ops = ALU_OPS.iter().map(|&(f, op)| (f, F::from_canonical_u8(op)));
-    let op_col = Column::linear_combination(ops);
-
-    let cols = Column::singles([
-        ALU_COL_MAP.f_imm,
+    let mut cols = vec![Column::linear_combination(ops)];
+    cols.extend(Column::singles([
         ALU_COL_MAP.in0,
         ALU_COL_MAP.in1,
         ALU_COL_MAP.out,
-    ]);
-    std::iter::once(op_col).chain(cols).collect()
-}
+    ]));
 
-pub(crate) fn ctl_looked_reg<F: Field>() -> TableWithColumns<F> {
-    let f_not_imm =
-        Column::linear_combination_with_constant(vec![(ALU_COL_MAP.f_imm, F::NEG_ONE)], F::ONE);
     let f_alu = Column::sum(ALU_OPS.iter().map(|&(f, _)| f));
-    let filter = Filter::new(vec![(f_alu, f_not_imm)], Default::default());
-    TableWithColumns::new(Table::Alu as usize, ctl_data(), filter)
-}
-
-pub(crate) fn ctl_looked_imm<F: Field>() -> TableWithColumns<F> {
-    let f_imm = Column::single(ALU_COL_MAP.f_imm);
-    let f_alu = Column::sum(ALU_OPS.iter().map(|&(f, _)| f));
-    let filter = Filter::new(vec![(f_alu, f_imm)], Default::default());
-    TableWithColumns::new(Table::Alu as usize, ctl_data(), filter)
+    let filter = Filter::new_simple(f_alu);
+    TableWithColumns::new(Table::Alu as usize, cols, filter)
 }
 
 #[derive(Clone, Copy, Default)]
@@ -59,21 +45,10 @@ pub(crate) struct AluStark<F, const D: usize> {
 }
 
 fn eval_all<P: PackedField>(lv: &AluCols<P>, nv: &AluCols<P>, cc: &mut ConstraintConsumer<P>) {
-    let f_add = lv.op.f_add;
-    let f_sub = lv.op.f_sub;
-    let f_lt = lv.op.f_lt;
-    cc.constraint(f_add * (f_add - P::ONES));
-    cc.constraint(f_sub * (f_sub - P::ONES));
-    cc.constraint(f_lt * (f_lt - P::ONES));
-
-    let in0 = lv.in0;
-    let in1 = lv.in1;
-    let out = lv.out;
-    let aux = lv.aux;
-
-    addcy::eval_add(cc, f_add, in0, in1, out, aux);
-    addcy::eval_sub(cc, f_sub, in0, in1, out, aux);
-    addcy::eval_lt(cc, f_lt, in0, in1, out, aux);
+    // cc.constraint(f_add * (f_add - P::ONES));
+    // cc.constraint(f_sub * (f_sub - P::ONES));
+    // cc.constraint(f_lt * (f_lt - P::ONES));
+    addcy::eval(lv, cc)
 }
 
 fn eval_all_circuit<F: RichField + Extendable<D>, const D: usize>(

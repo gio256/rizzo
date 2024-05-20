@@ -80,12 +80,12 @@ fn ctl_looked_filter<F: Field>() -> Filter<F> {
 }
 
 fn ctl<F: Field>() -> CrossTableLookup<F> {
-    CrossTableLookup::new(vec![ctl_looking()], ctl_looked())
+    CrossTableLookup::new(vec![ctl_looking(), ctl_looking()], ctl_looked())
 }
 
 impl<F: RichField + Extendable<D>, const D: usize> AStark<F, D> {
     fn trace_row_major() -> Vec<[F; N_A_COLS]> {
-        vec![[F::ZERO, F::ZERO, F::ZERO], [F::ZERO, F::ONE, F::ONE]]
+        vec![[F::ZERO, F::ZERO, F::ZERO]]
     }
     fn trace() -> Vec<PolynomialValues<F>> {
         let rows = Self::trace_row_major();
@@ -95,7 +95,7 @@ impl<F: RichField + Extendable<D>, const D: usize> AStark<F, D> {
 
 impl<F: RichField + Extendable<D>, const D: usize> BStark<F, D> {
     fn trace_row_major() -> Vec<[F; N_B_COLS]> {
-        vec![[F::ZERO, F::ONE, F::ONE], [F::ZERO, F::ZERO, F::ZERO]]
+        vec![[F::ZERO, F::ZERO, F::ZERO], [F::ZERO, F::ZERO, F::ZERO]]
     }
     fn trace() -> Vec<PolynomialValues<F>> {
         let rows = Self::trace_row_major();

@@ -19,31 +19,17 @@ pub enum Table {
 }
 
 fn all_cross_table_lookups<F: Field>() -> Vec<CrossTableLookup<F>> {
-    vec![ctl_alu_reg(), ctl_alu_imm(), ctl_mem()]
+    vec![ctl_alu(), ctl_mem()]
 }
 
-fn ctl_alu_reg<F: Field>() -> CrossTableLookup<F> {
-    let looking = vec![cpu::ctl_looking_alu_reg()];
-    let looked = alu::ctl_looked_reg();
-    CrossTableLookup::new(looking, looked)
-}
-
-fn ctl_alu_imm<F: Field>() -> CrossTableLookup<F> {
-    let looking = vec![cpu::ctl_looking_alu_imm()];
-    let looked = alu::ctl_looked_imm();
+fn ctl_alu<F: Field>() -> CrossTableLookup<F> {
+    let looking = vec![cpu::ctl_looking_alu_reg(), cpu::ctl_looking_alu_imm()];
+    let looked = alu::ctl_looked();
     CrossTableLookup::new(looking, looked)
 }
 
 fn ctl_mem<F: Field>() -> CrossTableLookup<F> {
-    let looking = (0..N_MEM_CHANNELS)
-        .map(|ch| {
-            TableWithColumns::new(
-                Table::Cpu as usize,
-                cpu::ctl_looking_mem(ch),
-                cpu::ctl_filter_mem(ch),
-            )
-        })
-        .collect();
-    let looked = TableWithColumns::new(Table::Mem as usize, mem::ctl_looked(), mem::ctl_filter());
+    let looking = (0..N_MEM_CHANNELS).map(cpu::ctl_looking_mem).collect();
+    let looked = mem::ctl_looked();
     CrossTableLookup::new(looking, looked)
 }
