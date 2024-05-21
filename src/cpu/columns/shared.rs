@@ -5,7 +5,7 @@ pub(crate) const N_SHARED_COLS: usize = core::mem::size_of::<SharedCols<u8>>();
 
 #[derive(Clone, Copy)]
 pub(crate) union SharedCols<T: Copy> {
-    branch: BranchCols<T>
+    branch: BranchCols<T>,
 }
 
 impl<T: Copy> SharedCols<T> {

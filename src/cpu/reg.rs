@@ -13,8 +13,7 @@ pub(crate) fn eval<P: PackedField>(
     nv: &CpuCols<P>,
     cc: &mut ConstraintConsumer<P>,
 ) {
-    // let filter = lv.op.f_lui;
-    todo!()
+    //TODO
 }
 
 pub(crate) fn eval_circuit<F: RichField + Extendable<D>, const D: usize>(
@@ -23,5 +22,5 @@ pub(crate) fn eval_circuit<F: RichField + Extendable<D>, const D: usize>(
     nv: &CpuCols<ExtensionTarget<D>>,
     cc: &mut RecursiveConstraintConsumer<F, D>,
 ) {
-    todo!()
+    //TODO
 }

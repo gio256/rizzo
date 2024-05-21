@@ -39,7 +39,7 @@ fn eval_all<P: PackedField>(lv: &MemCols<P>, nv: &MemCols<P>, cc: &mut Constrain
     let f_rw = lv.f_rw;
 
     // padding rows must be reads
-    let f_pad = P::ONES - lv.f_on;
+    let f_pad = P::ONES - f_on;
     cc.constraint(f_pad * f_rw);
 
     let f_seg_fst_diff = lv.f_seg_fst_diff;
@@ -52,7 +52,18 @@ fn eval_all_circuit<F: RichField + Extendable<D>, const D: usize>(
     nv: &MemCols<ExtensionTarget<D>>,
     cc: &mut RecursiveConstraintConsumer<F, D>,
 ) {
-    todo!()
+    let one = cb.one_extension();
+
+    let f_on = lv.f_on;
+    let f_not_on = cb.sub_extension(f_on, one);
+    let cs = cb.mul_extension(f_on, f_not_on);
+    cc.constraint(cb, cs);
+
+    let f_rw = lv.f_rw;
+
+    let f_pad = cb.sub_extension(one, f_on);
+    let cs = cb.mul_extension(f_pad, f_rw);
+    cc.constraint(cb, cs);
 }
 
 #[derive(Clone, Copy, Default)]
@@ -103,4 +114,29 @@ impl<F: RichField + Extendable<D>, const D: usize> Stark<F, D> for MemStark<F, D
     fn requires_ctls(&self) -> bool {
         true
     }
+}
+
+#[cfg(test)]
+mod tests {
+    use plonky2::plonk::config::{GenericConfig, PoseidonGoldilocksConfig};
+    use starky::stark_testing::{test_stark_circuit_constraints, test_stark_low_degree};
+
+    use super::MemStark;
+
+    const D: usize = 2;
+    type C = PoseidonGoldilocksConfig;
+    type F = <C as GenericConfig<D>>::F;
+    type S = MemStark<F, D>;
+
+    #[test]
+    fn stark_degree() {
+        let stark: S = Default::default();
+        test_stark_low_degree(stark).unwrap();
+    }
+
+    // #[test]
+    // fn stark_circuit() {
+    //     let stark: S = Default::default();
+    //     test_stark_circuit_constraints::<F, C, S, D>(stark).unwrap();
+    // }
 }

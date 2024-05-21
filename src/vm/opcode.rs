@@ -2,7 +2,6 @@
 pub(crate) enum Opcode {
     ADD,
     SUB,
-    SLT,
     SLTU,
 
     LW,
@@ -10,4 +9,9 @@ pub(crate) enum Opcode {
 
     JAL,
     JALR,
+
+    BEQ,
+    BNE,
+    BLTU,
+    BGEU,
 }
