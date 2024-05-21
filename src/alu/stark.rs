@@ -21,7 +21,7 @@ use crate::vm::opcode::Opcode;
 const ALU_OPS: [(usize, u8); 3] = [
     (ALU_COL_MAP.op.f_add, Opcode::ADD as u8),
     (ALU_COL_MAP.op.f_sub, Opcode::SUB as u8),
-    (ALU_COL_MAP.op.f_lt, Opcode::SLT as u8),
+    (ALU_COL_MAP.op.f_ltu, Opcode::SLTU as u8),
 ];
 
 pub(crate) fn ctl_looked<F: Field>() -> TableWithColumns<F> {
@@ -47,7 +47,7 @@ pub(crate) struct AluStark<F, const D: usize> {
 fn eval_all<P: PackedField>(lv: &AluCols<P>, nv: &AluCols<P>, cc: &mut ConstraintConsumer<P>) {
     // cc.constraint(f_add * (f_add - P::ONES));
     // cc.constraint(f_sub * (f_sub - P::ONES));
-    // cc.constraint(f_lt * (f_lt - P::ONES));
+    // cc.constraint(f_ltu * (f_ltu - P::ONES));
     addcy::eval(lv, cc)
 }
 

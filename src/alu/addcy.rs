@@ -11,6 +11,7 @@ use crate::alu::columns::{AluCols, ALU_COL_MAP};
 /// The multiplicative inverse of 2^32.
 const GOLDILOCKS_INVERSE_REG_SIZE: u64 = 18446744065119617026;
 const REG_BITS: usize = 32;
+// const SIGN_BIT: u32 = 1 << (REG_BITS - 1);
 
 pub(crate) fn generate<F: PrimeField64>(lv: &mut AluCols<F>, filter: usize, left: u32, right: u32) {
     lv.in0 = F::from_canonical_u32(left);
@@ -24,7 +25,7 @@ pub(crate) fn generate<F: PrimeField64>(lv: &mut AluCols<F>, filter: usize, left
         let (diff, cy) = left.overflowing_sub(right);
         lv.aux = F::from_canonical_u32(cy as u32);
         lv.out = F::from_canonical_u32(diff);
-    } else if filter == ALU_COL_MAP.op.f_lt {
+    } else if filter == ALU_COL_MAP.op.f_ltu {
         let (diff, cy) = left.overflowing_sub(right);
         lv.aux = F::from_canonical_u32(diff);
         lv.out = F::from_canonical_u32(cy as u32);
@@ -36,7 +37,7 @@ pub(crate) fn generate<F: PrimeField64>(lv: &mut AluCols<F>, filter: usize, left
 pub(crate) fn eval<P: PackedField>(lv: &AluCols<P>, cc: &mut ConstraintConsumer<P>) {
     let f_add = lv.op.f_add;
     let f_sub = lv.op.f_sub;
-    let f_lt = lv.op.f_lt;
+    let f_ltu = lv.op.f_ltu;
 
     let in0 = lv.in0;
     let in1 = lv.in1;
@@ -45,7 +46,7 @@ pub(crate) fn eval<P: PackedField>(lv: &AluCols<P>, cc: &mut ConstraintConsumer<
 
     eval_add(cc, f_add, in0, in1, out, aux);
     eval_sub(cc, f_sub, in0, in1, out, aux);
-    eval_lt(cc, f_lt, in0, in1, out, aux);
+    eval_ltu(cc, f_ltu, in0, in1, out, aux);
 }
 
 /// Constrains x + y == z + cy * 2^32
@@ -128,7 +129,7 @@ pub(crate) fn eval_sub<P: PackedField>(
     eval_addcy(cc, filter, right, out, left, overflow, false)
 }
 
-pub(crate) fn eval_lt<P: PackedField>(
+pub(crate) fn eval_ltu<P: PackedField>(
     cc: &mut ConstraintConsumer<P>,
     filter: P,
     left: P,
@@ -140,7 +141,7 @@ pub(crate) fn eval_lt<P: PackedField>(
     eval_addcy(cc, filter, right, diff, left, out, false)
 }
 
-pub(crate) fn eval_gt<P: PackedField>(
+pub(crate) fn eval_gtu<P: PackedField>(
     cc: &mut ConstraintConsumer<P>,
     filter: P,
     left: P,
@@ -151,6 +152,24 @@ pub(crate) fn eval_gt<P: PackedField>(
     // constrain right + diff == left + out * 2^32
     eval_addcy(cc, filter, left, diff, right, out, false)
 }
+
+// pub(crate) fn eval_lts<P: PackedField>(
+//     cc: &mut ConstraintConsumer<P>,
+//     filter: P,
+//     left: P,
+//     right: P,
+//     out: P,
+//     left_bias: P,
+//     left_bias_ovf: P,
+//     right_bias: P,
+//     right_bias_ovf: P,
+//     diff: P,
+// ) {
+//     let sign_mask: P = P::Scalar::from_canonical_u32(SIGN_BIT).into();
+//     eval_add(cc, filter, left, sign_mask, left_bias, left_bias_ovf);
+//     eval_add(cc, filter, right, sign_mask, right_bias, right_bias_ovf);
+//     eval_ltu(cc, filter, left_bias, right_bias, out, diff);
+// }
 
 #[cfg(test)]
 mod tests {
@@ -182,7 +201,7 @@ mod tests {
 
         lv.op.f_add = F::ZERO;
         lv.op.f_sub = F::ZERO;
-        lv.op.f_lt = F::ZERO;
+        lv.op.f_ltu = F::ZERO;
 
         let mut cc = constraint_consumer();
         eval(lv, &mut cc);
@@ -199,7 +218,7 @@ mod tests {
 
         lv.op.f_add = F::ONE;
         lv.op.f_sub = F::ZERO;
-        lv.op.f_lt = F::ZERO;
+        lv.op.f_ltu = F::ZERO;
 
         let left: u32 = rng.gen();
         let right: u32 = rng.gen();
@@ -224,7 +243,7 @@ mod tests {
 
         lv.op.f_add = F::ZERO;
         lv.op.f_sub = F::ONE;
-        lv.op.f_lt = F::ZERO;
+        lv.op.f_ltu = F::ZERO;
 
         let left: u32 = rng.gen();
         let right: u32 = rng.gen();
@@ -242,18 +261,18 @@ mod tests {
     }
 
     #[test]
-    fn generate_eval_lt() {
+    fn generate_eval_ltu() {
         let mut rng = rand::thread_rng();
         let mut lv = [F::default(); N_ALU_COLS].map(|_| F::sample(&mut rng));
         let lv: &mut AluCols<F> = lv.borrow_mut();
 
         lv.op.f_add = F::ZERO;
         lv.op.f_sub = F::ZERO;
-        lv.op.f_lt = F::ONE;
+        lv.op.f_ltu = F::ONE;
 
         let left: u32 = rng.gen();
         let right: u32 = rng.gen();
-        generate(lv, ALU_COL_MAP.op.f_lt, left, right);
+        generate(lv, ALU_COL_MAP.op.f_ltu, left, right);
 
         let mut cc = constraint_consumer();
         eval(lv, &mut cc);

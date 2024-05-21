@@ -6,7 +6,7 @@ use plonky2::iop::ext_target::ExtensionTarget;
 use plonky2::plonk::circuit_builder::CircuitBuilder;
 use starky::constraint_consumer::{ConstraintConsumer, RecursiveConstraintConsumer};
 
-use crate::alu::{eval_add_transition, eval_lt};
+use crate::alu::{eval_add_transition, eval_ltu};
 use crate::cpu::columns::CpuCols;
 use crate::cpu::control_flow::INSTRUCTION_BYTES;
 
@@ -17,9 +17,9 @@ pub(crate) fn eval<P: PackedField>(
 ) {
     let f_beq = lv.op.f_beq;
     let f_bne = lv.op.f_bne;
-    let f_blt = lv.op.f_blt;
-    let f_bge = lv.op.f_bge;
-    let f_branch = f_beq + f_bne + f_blt + f_bge;
+    let f_bltu = lv.op.f_bltu;
+    let f_bgeu = lv.op.f_bgeu;
+    let f_branch = f_beq + f_bne + f_bltu + f_bgeu;
     let f_not_branch = P::ONES - f_branch;
 
     let blv = lv.shared.branch();
@@ -49,9 +49,9 @@ pub(crate) fn eval<P: PackedField>(
     cc.constraint(f_branch * (lv.rs2_adr() - ch_rs2.adr_virt));
     let rs2_val = ch_rs2.val;
 
-    //TODO: are these constraints sufficient for blt and bge?
-    eval_lt(cc, f_blt, rs1_val, rs2_val, f_take_branch, lv.f_aux1);
-    eval_lt(cc, f_bge, rs1_val, rs2_val, f_not_take_branch, lv.f_aux1);
+    //TODO: are these constraints sufficient for bltu and bgeu?
+    eval_ltu(cc, f_bltu, rs1_val, rs2_val, f_take_branch, lv.f_aux1);
+    eval_ltu(cc, f_bgeu, rs1_val, rs2_val, f_not_take_branch, lv.f_aux1);
 
     let diff = rs1_val - rs2_val;
     let diff_pinv = blv.diff_pinv;

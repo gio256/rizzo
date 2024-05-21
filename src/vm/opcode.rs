@@ -3,6 +3,7 @@ pub(crate) enum Opcode {
     ADD,
     SUB,
     SLT,
+    SLTU,
 
     LW,
     SW,

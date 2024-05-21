@@ -8,7 +8,7 @@ pub(crate) const ALU_COL_MAP: AluCols<usize> = make_col_map();
 pub(crate) struct AluOpCols<T> {
     pub f_add: T,
     pub f_sub: T,
-    pub f_lt: T,
+    pub f_ltu: T,
 }
 
 #[repr(C)]

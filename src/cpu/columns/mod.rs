@@ -32,10 +32,10 @@ pub(crate) struct OpCols<T> {
     pub f_jalr: T,
     pub f_beq: T,
     pub f_bne: T,
-    pub f_blt: T,
-    pub f_bge: T,
-    // pub f_bltu: T,
-    // pub f_bgeu: T,
+    pub f_bltu: T,
+    pub f_bgeu: T,
+    // pub f_blt: T,
+    // pub f_bge: T,
     pub f_lui: T,
 }
 
@@ -54,8 +54,8 @@ pub(crate) struct CpuCols<T: Copy> {
     pub rd: T,
     pub imm: T,
     pub f_imm: T,
-    pub f_aux0: T, // TODO: CpuGeneralColumnsView union
-    pub f_aux1: T, // TODO: CpuGeneralColumnsView union
+    pub f_aux0: T,
+    pub f_aux1: T,
     pub membus: [MemChannel<T>; N_MEM_CHANNELS],
     pub shared: SharedCols<T>,
 }
