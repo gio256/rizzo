@@ -104,3 +104,28 @@ impl<F: RichField + Extendable<D>, const D: usize> Stark<F, D> for AluStark<F, D
         true
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use plonky2::plonk::config::{GenericConfig, PoseidonGoldilocksConfig};
+    use starky::stark_testing::{test_stark_circuit_constraints, test_stark_low_degree};
+
+    use super::AluStark;
+
+    const D: usize = 2;
+    type C = PoseidonGoldilocksConfig;
+    type F = <C as GenericConfig<D>>::F;
+    type S = AluStark<F, D>;
+
+    #[test]
+    fn stark_degree() {
+        let stark: S = Default::default();
+        test_stark_low_degree(stark).unwrap();
+    }
+
+    // #[test]
+    // fn stark_circuit() {
+    //     let stark: S = Default::default();
+    //     test_stark_circuit_constraints::<F, C, S, D>(stark).unwrap();
+    // }
+}

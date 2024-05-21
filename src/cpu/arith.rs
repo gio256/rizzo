@@ -31,7 +31,7 @@ pub(crate) fn eval<P: PackedField>(
 
     let ch_rs2 = lv.rs2_channel();
     let use_rs2 = P::ONES - f_imm;
-    cc.constraint(f_imm * ch_rs2.f_on);
+    cc.constraint(f_alu * f_imm * ch_rs2.f_on);
     cc.constraint(f_alu * use_rs2 * (P::ONES - ch_rs2.f_on));
     cc.constraint(f_alu * use_rs2 * ch_rs2.f_rw);
     cc.constraint(f_alu * use_rs2 * ch_rs2.adr_seg);
@@ -50,5 +50,5 @@ pub(crate) fn eval_circuit<F: RichField + Extendable<D>, const D: usize>(
     nv: &CpuCols<ExtensionTarget<D>>,
     cc: &mut RecursiveConstraintConsumer<F, D>,
 ) {
-    todo!()
+    //TODO
 }
