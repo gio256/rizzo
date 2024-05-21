@@ -49,19 +49,35 @@ pub(crate) fn eval<P: PackedField>(lv: &AluCols<P>, cc: &mut ConstraintConsumer<
 }
 
 /// Constrains x + y == z + cy * 2^32
-fn eval_addcy<P: PackedField>(cc: &mut ConstraintConsumer<P>, filter: P, x: P, y: P, z: P, cy: P) {
+fn eval_addcy<P: PackedField>(
+    cc: &mut ConstraintConsumer<P>,
+    filter: P,
+    x: P,
+    y: P,
+    z: P,
+    cy: P,
+    transition: bool,
+) {
     let base = P::Scalar::from_canonical_u64(1u64 << REG_BITS);
     let base_inv = P::Scalar::from_canonical_u64(GOLDILOCKS_INVERSE_REG_SIZE);
     debug_assert!(base * base_inv == P::Scalar::ONE);
 
     // diff in {0, base}
     let diff = x + y - z;
-    cc.constraint(filter * diff * (diff - base));
+    if transition {
+        cc.constraint_transition(filter * diff * (diff - base));
+    } else {
+        cc.constraint(filter * diff * (diff - base));
+    }
 
     // did_cy in {0, 1}
     let did_cy = diff * base_inv;
     cc.constraint(filter * cy * (cy - P::ONES));
-    cc.constraint(filter * (did_cy - cy));
+    if transition {
+        cc.constraint_transition(filter * (did_cy - cy));
+    } else {
+        cc.constraint(filter * (did_cy - cy));
+    }
 }
 
 fn eval_addcy_circuit<F: RichField + Extendable<D>, const D: usize>(
@@ -85,7 +101,19 @@ pub(crate) fn eval_add<P: PackedField>(
     overflow: P,
 ) {
     // constrain left + right == out + overflow * 2^32
-    eval_addcy(cc, filter, left, right, out, overflow)
+    eval_addcy(cc, filter, left, right, out, overflow, false)
+}
+
+pub(crate) fn eval_add_transition<P: PackedField>(
+    cc: &mut ConstraintConsumer<P>,
+    filter: P,
+    left: P,
+    right: P,
+    out: P,
+    overflow: P,
+) {
+    // constrain left + right == out + overflow * 2^32
+    eval_addcy(cc, filter, left, right, out, overflow, true)
 }
 
 pub(crate) fn eval_sub<P: PackedField>(
@@ -97,7 +125,7 @@ pub(crate) fn eval_sub<P: PackedField>(
     overflow: P,
 ) {
     // constrain right + out == left + overflow * 2^32
-    eval_addcy(cc, filter, right, out, left, overflow)
+    eval_addcy(cc, filter, right, out, left, overflow, false)
 }
 
 pub(crate) fn eval_lt<P: PackedField>(
@@ -109,7 +137,7 @@ pub(crate) fn eval_lt<P: PackedField>(
     diff: P,
 ) {
     // constrain right + diff == left + out * 2^32
-    eval_addcy(cc, filter, right, diff, left, out)
+    eval_addcy(cc, filter, right, diff, left, out, false)
 }
 
 pub(crate) fn eval_gt<P: PackedField>(
@@ -121,7 +149,7 @@ pub(crate) fn eval_gt<P: PackedField>(
     diff: P,
 ) {
     // constrain right + diff == left + out * 2^32
-    eval_addcy(cc, filter, left, diff, right, out)
+    eval_addcy(cc, filter, left, diff, right, out, false)
 }
 
 #[cfg(test)]

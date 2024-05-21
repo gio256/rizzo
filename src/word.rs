@@ -1,14 +1,13 @@
 use core::borrow::{Borrow, BorrowMut};
 
+use static_assertions::const_assert;
+
 pub const LIMB_BITS: usize = 8;
 pub const WORD_BITS: usize = 32;
 pub const N_LIMBS: usize = n_limbs();
 
 const fn n_limbs() -> usize {
-    assert!(
-        WORD_BITS % LIMB_BITS == 0,
-        "LIMB_BITS must divide WORD_BITS"
-    );
+    const_assert!(WORD_BITS % LIMB_BITS == 0);
     let n = WORD_BITS / LIMB_BITS;
     assert!(n % 2 == 0, "N_LIMBS must be even");
     n

@@ -6,7 +6,7 @@ use plonky2::iop::ext_target::ExtensionTarget;
 use plonky2::plonk::circuit_builder::CircuitBuilder;
 use starky::constraint_consumer::{ConstraintConsumer, RecursiveConstraintConsumer};
 
-use crate::alu::eval_add;
+use crate::alu::eval_add_transition;
 use crate::cpu::columns::{CpuCols, CPU_COL_MAP};
 
 const INC_PC_OPS: [usize; 3] = [
@@ -29,7 +29,7 @@ pub(crate) fn eval<P: PackedField>(
 
     let f_inc_pc: P = INC_PC_OPS.iter().map(|&i| lv[i]).sum();
     let ix_bytes: P = P::Scalar::from_canonical_usize(INSTRUCTION_BYTES).into();
-    eval_add(cc, f_inc_pc, lv.pc, ix_bytes, nv.pc, lv.f_aux0);
+    eval_add_transition(cc, f_inc_pc, lv.pc, ix_bytes, nv.pc, lv.f_aux0);
     // cc.constraint_transition(inc_pc * (nv.pc - lv.pc - P::Scalar::from_canonical_u8(4)));
 }
 

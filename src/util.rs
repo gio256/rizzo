@@ -1,3 +1,14 @@
+use plonky2::field::packed::PackedField;
+use plonky2::field::types::Field;
+
+const REG_BYTES: usize = 4;
+
+/// Takes a register in [x0..x31] and returns the corresponding virtual address
+pub(crate) fn reg_adr<P: PackedField>(reg: P) -> P {
+    reg * P::Scalar::from_canonical_usize(REG_BYTES)
+}
+
+/// Returns [0,1,..,N]
 pub(crate) const fn indices_arr<const N: usize>() -> [usize; N] {
     let mut arr = [0; N];
     let mut i = 0;

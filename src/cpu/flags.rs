@@ -13,6 +13,7 @@ pub(crate) fn eval<P: PackedField>(
     nv: &CpuCols<P>,
     cc: &mut ConstraintConsumer<P>,
 ) {
+    cc.constraint(lv.f_imm * (lv.f_imm - P::ONES));
     cc.constraint(lv.f_aux0 * (lv.f_aux0 - P::ONES));
     cc.constraint(lv.f_aux1 * (lv.f_aux1 - P::ONES));
 

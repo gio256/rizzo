@@ -27,7 +27,7 @@ pub(crate) fn eval<P: PackedField>(
     cc.constraint(f_alu * (P::ONES - ch_rs1.f_on));
     cc.constraint(f_alu * ch_rs1.f_rw);
     cc.constraint(f_alu * ch_rs1.adr_seg);
-    cc.constraint(f_alu * (lv.rs1 - ch_rs1.adr_virt));
+    cc.constraint(f_alu * (lv.rs1_adr() - ch_rs1.adr_virt));
 
     let ch_rs2 = lv.rs2_channel();
     let use_rs2 = P::ONES - f_imm;
@@ -35,13 +35,13 @@ pub(crate) fn eval<P: PackedField>(
     cc.constraint(f_alu * use_rs2 * (P::ONES - ch_rs2.f_on));
     cc.constraint(f_alu * use_rs2 * ch_rs2.f_rw);
     cc.constraint(f_alu * use_rs2 * ch_rs2.adr_seg);
-    cc.constraint(f_alu * use_rs2 * (lv.rs2 - ch_rs2.adr_virt));
+    cc.constraint(f_alu * use_rs2 * (lv.rs2_adr() - ch_rs2.adr_virt));
 
     let ch_rd = lv.rd_channel();
     cc.constraint(f_alu * (P::ONES - ch_rd.f_on));
     cc.constraint(f_alu * (P::ONES - ch_rd.f_rw));
     cc.constraint(f_alu * ch_rd.adr_seg);
-    cc.constraint(f_alu * (lv.rd - ch_rd.adr_virt));
+    cc.constraint(f_alu * (lv.rd_adr() - ch_rd.adr_virt));
 }
 
 pub(crate) fn eval_circuit<F: RichField + Extendable<D>, const D: usize>(

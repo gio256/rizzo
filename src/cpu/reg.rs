@@ -7,6 +7,7 @@ use starky::constraint_consumer::{ConstraintConsumer, RecursiveConstraintConsume
 
 use crate::cpu::columns::CpuCols;
 
+//TODO: constrain rs1, rs2, rd in 0..32
 pub(crate) fn eval<P: PackedField>(
     lv: &CpuCols<P>,
     nv: &CpuCols<P>,

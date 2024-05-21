@@ -1,7 +1,11 @@
 use core::borrow::{Borrow, BorrowMut};
 use core::ops::{Deref, DerefMut, Index, IndexMut};
 
+use plonky2::field::packed::PackedField;
 use static_assertions::const_assert;
+
+mod shared;
+use shared::SharedCols;
 
 pub(crate) const N_MEM_CHANNELS: usize = 3;
 pub(crate) const N_MEM_CHANNEL_COLS: usize = core::mem::size_of::<MemChannel<u8>>();
@@ -22,11 +26,7 @@ pub(crate) const N_OP_COLS: usize = core::mem::size_of::<OpCols<u8>>();
 #[derive(Clone, Copy, Eq, PartialEq, Debug)]
 pub(crate) struct OpCols<T> {
     pub f_alu: T,
-    pub f_lb: T,
-    pub f_lh: T,
     pub f_lw: T,
-    pub f_sb: T,
-    pub f_sh: T,
     pub f_sw: T,
     pub f_jal: T,
     pub f_jalr: T,
@@ -34,8 +34,8 @@ pub(crate) struct OpCols<T> {
     pub f_bne: T,
     pub f_blt: T,
     pub f_bge: T,
-    pub f_bltu: T,
-    pub f_bgeu: T,
+    // pub f_bltu: T,
+    // pub f_bgeu: T,
     pub f_lui: T,
 }
 
@@ -43,8 +43,8 @@ pub(crate) const N_CPU_COLS: usize = core::mem::size_of::<CpuCols<u8>>();
 pub(crate) const CPU_COL_MAP: CpuCols<usize> = make_col_map();
 
 #[repr(C)]
-#[derive(Clone, Copy, Eq, PartialEq, Debug)]
-pub(crate) struct CpuCols<T> {
+#[derive(Clone, Copy, Debug)]
+pub(crate) struct CpuCols<T: Copy> {
     pub clock: T,
     pub pc: T,
     pub op: OpCols<T>,
@@ -56,22 +56,34 @@ pub(crate) struct CpuCols<T> {
     pub f_imm: T,
     pub f_aux0: T, // TODO: CpuGeneralColumnsView union
     pub f_aux1: T, // TODO: CpuGeneralColumnsView union
-    pub f_branch: T,
     pub membus: [MemChannel<T>; N_MEM_CHANNELS],
+    pub shared: SharedCols<T>,
 }
 
-impl<T> CpuCols<T> {
-    pub fn rd_channel(&self) -> &MemChannel<T> {
+impl<T: Copy> CpuCols<T> {
+    pub(crate) fn rd_channel(&self) -> &MemChannel<T> {
         const_assert!(N_MEM_CHANNELS > 0);
         &self.membus[0]
     }
-    pub fn rs1_channel(&self) -> &MemChannel<T> {
+    pub(crate) fn rs1_channel(&self) -> &MemChannel<T> {
         const_assert!(N_MEM_CHANNELS > 1);
         &self.membus[1]
     }
-    pub fn rs2_channel(&self) -> &MemChannel<T> {
+    pub(crate) fn rs2_channel(&self) -> &MemChannel<T> {
         const_assert!(N_MEM_CHANNELS > 2);
         &self.membus[2]
+    }
+}
+
+impl<P: PackedField> CpuCols<P> {
+    pub(crate) fn rs1_adr(&self) -> P {
+        crate::util::reg_adr(self.rs1)
+    }
+    pub(crate) fn rs2_adr(&self) -> P {
+        crate::util::reg_adr(self.rs2)
+    }
+    pub(crate) fn rd_adr(&self) -> P {
+        crate::util::reg_adr(self.rd)
     }
 }
 
