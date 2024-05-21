@@ -14,7 +14,7 @@ use starky::lookup::{Column, Filter, Lookup};
 use starky::stark::Stark;
 
 use crate::cpu::columns::{CpuCols, CPU_COL_MAP, N_CPU_COLS, N_MEM_CHANNELS};
-use crate::cpu::{alu, clock, control_flow, decode, flag, jump, membus, memio, reg};
+use crate::cpu::{arith, branch, clock, control_flow, decode, flags, jump, membus, memio, reg};
 use crate::stark::Table;
 
 fn mem_timestamp<F: Field>(channel: usize) -> Column<F> {
@@ -72,8 +72,9 @@ fn eval_all<P: PackedField>(lv: &CpuCols<P>, nv: &CpuCols<P>, cc: &mut Constrain
     memio::eval(lv, nv, cc);
     decode::eval(lv, nv, cc);
     jump::eval(lv, nv, cc);
-    flag::eval(lv, nv, cc);
-    alu::eval(lv, nv, cc);
+    branch::eval(lv, nv, cc);
+    flags::eval(lv, nv, cc);
+    arith::eval(lv, nv, cc);
     reg::eval(lv, nv, cc);
 }
 
@@ -89,8 +90,9 @@ fn eval_all_circuit<F: RichField + Extendable<D>, const D: usize>(
     memio::eval_circuit(cb, lv, nv, cc);
     decode::eval_circuit(cb, lv, nv, cc);
     jump::eval_circuit(cb, lv, nv, cc);
-    flag::eval_circuit(cb, lv, nv, cc);
-    alu::eval_circuit(cb, lv, nv, cc);
+    branch::eval_circuit(cb, lv, nv, cc);
+    flags::eval_circuit(cb, lv, nv, cc);
+    arith::eval_circuit(cb, lv, nv, cc);
     reg::eval_circuit(cb, lv, nv, cc);
 }
 
@@ -139,5 +141,9 @@ impl<F: RichField + Extendable<D>, const D: usize> Stark<F, D> for CpuStark<F, D
 
     fn constraint_degree(&self) -> usize {
         3
+    }
+
+    fn requires_ctls(&self) -> bool {
+        true
     }
 }

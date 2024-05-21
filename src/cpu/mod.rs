@@ -1,9 +1,10 @@
-pub mod alu;
+pub mod arith;
+pub mod branch;
 pub mod clock;
 pub mod columns;
 pub mod control_flow;
 pub mod decode;
-pub mod flag;
+pub mod flags;
 pub mod jump;
 pub mod membus;
 pub mod memio;

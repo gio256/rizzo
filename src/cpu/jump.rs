@@ -6,7 +6,7 @@ use plonky2::iop::ext_target::ExtensionTarget;
 use plonky2::plonk::circuit_builder::CircuitBuilder;
 use starky::constraint_consumer::{ConstraintConsumer, RecursiveConstraintConsumer};
 
-use crate::alu::eval_add;
+use crate::alu::{eval_add, eval_add_transition};
 use crate::cpu::columns::CpuCols;
 use crate::cpu::control_flow::INSTRUCTION_BYTES;
 
@@ -20,25 +20,25 @@ pub(crate) fn eval<P: PackedField>(
     let f_jump = f_jal + f_jalr;
 
     // jal sets PC = PC + imm
-    eval_add(cc, f_jal, lv.pc, lv.imm, nv.pc, lv.f_aux0);
+    eval_add_transition(cc, f_jal, lv.pc, lv.imm, nv.pc, lv.f_aux0);
 
     // jalr sets PC = rs1 + imm
     let ch_rs1 = lv.rs1_channel();
     cc.constraint(f_jalr * (P::ONES - ch_rs1.f_on));
     cc.constraint(f_jalr * ch_rs1.f_rw);
     cc.constraint(f_jalr * ch_rs1.adr_seg);
-    cc.constraint(f_jalr * (lv.rs1 - ch_rs1.adr_virt));
-    eval_add(cc, f_jalr, lv.pc, ch_rs1.val, nv.pc, lv.f_aux0);
+    cc.constraint(f_jalr * (lv.rs1_adr() - ch_rs1.adr_virt));
+    eval_add_transition(cc, f_jalr, lv.pc, ch_rs1.val, nv.pc, lv.f_aux0);
 
     // jal disables the rs1 memory channel
-    cc.constraint(f_jal * (P::ONES - ch_rs1.f_on));
+    cc.constraint(f_jal * ch_rs1.f_on);
 
     // both jal and jalr set rd = PC + 4
     let ch_rd = lv.rd_channel();
     cc.constraint(f_jump * (P::ONES - ch_rd.f_on));
     cc.constraint(f_jump * (P::ONES - ch_rd.f_rw));
     cc.constraint(f_jump * ch_rd.adr_seg);
-    cc.constraint(f_jump * (lv.rd - ch_rd.adr_virt));
+    cc.constraint(f_jump * (lv.rd_adr() - ch_rd.adr_virt));
     let ix_bytes: P = P::Scalar::from_canonical_usize(INSTRUCTION_BYTES).into();
     eval_add(cc, f_jump, lv.pc, ix_bytes, ch_rd.val, lv.f_aux1);
 
