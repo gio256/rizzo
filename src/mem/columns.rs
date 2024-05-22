@@ -1,8 +1,6 @@
 use core::borrow::{Borrow, BorrowMut};
 use core::ops::{Deref, DerefMut, Index, IndexMut};
 
-use crate::word::Word;
-
 pub(crate) const N_MEM_COLS: usize = core::mem::size_of::<MemCols<u8>>();
 pub(crate) const MEM_COL_MAP: MemCols<usize> = make_col_map();
 
