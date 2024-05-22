@@ -9,15 +9,29 @@ pub(crate) const MEM_COL_MAP: MemCols<usize> = make_col_map();
 #[repr(C)]
 #[derive(Clone, Copy, Eq, PartialEq, Debug)]
 pub(crate) struct MemCols<T> {
+    /// 1 if this is a real memory operation, 0 if it's a padding row
     pub f_on: T,
+    /// 1 if this is a write operation, 0 for a read operation
     pub f_rw: T,
+    /// timestamp
     pub time: T,
+    /// address segment
     pub adr_seg: T,
+    /// address virtual
     pub adr_virt: T,
+    /// value
     pub val: T,
-
-    pub f_seg_fst_diff: T,
-    pub f_virt_fst_diff: T,
+    /// Contains (1 - f_seg_diff - f_virt_diff) * (1 - f_reg0)
+    pub aux: T,
+    /// 1 if this operation targets register x0, 0 otherwise
+    pub f_reg0: T,
+    /// 1 if adr_seg differs in the next row, 0 otherwise
+    pub f_seg_diff: T,
+    /// 1 if adr_virt differs in the next row and adr_seg does not, 0 otherwise
+    pub f_virt_diff: T,
+    pub range_check: T,
+    pub counter: T,
+    pub frequencies: T,
 }
 
 const fn make_col_map() -> MemCols<usize> {

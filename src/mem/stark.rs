@@ -33,17 +33,70 @@ pub(crate) fn ctl_looked<F: Field>() -> TableWithColumns<F> {
 fn eval_all<P: PackedField>(lv: &MemCols<P>, nv: &MemCols<P>, cc: &mut ConstraintConsumer<P>) {
     // f_on in {0, 1}
     let f_on = lv.f_on;
-    cc.constraint(f_on * (f_on - P::ONES));
+    let f_off = P::ONES - f_on;
+    cc.constraint(f_on * f_off);
 
     // f_rw in {0, 1} is enforced by CTL
-    let f_rw = lv.f_rw;
+    let f_write = lv.f_rw;
+    let f_read = P::ONES - f_write;
+    let f_read_next = P::ONES - nv.f_rw;
 
     // padding rows must be reads
-    let f_pad = P::ONES - f_on;
-    cc.constraint(f_pad * f_rw);
+    cc.constraint(f_off * f_write);
 
-    let f_seg_fst_diff = lv.f_seg_fst_diff;
-    let f_virt_fst_diff = lv.f_virt_fst_diff;
+    // local values
+    let adr_seg = lv.adr_seg;
+    let adr_virt = lv.adr_virt;
+    let val = lv.val;
+
+    // next values
+    let adr_seg_next = nv.adr_seg;
+    let adr_virt_next = nv.adr_virt;
+    let val_next = nv.val;
+
+    // flags
+    let f_reg0 = lv.f_reg0;
+    let f_not_reg0 = P::ONES - f_reg0;
+    let f_seg_diff = lv.f_seg_diff;
+    let f_virt_diff = lv.f_virt_diff;
+    let f_seg_same = P::ONES - f_seg_diff;
+    let f_virt_same = P::ONES - f_virt_diff;
+    let f_adr_diff = f_seg_diff + f_virt_diff;
+    let f_adr_same = P::ONES - f_adr_diff;
+
+    // flags in {0, 1}
+    cc.constraint(f_reg0 * f_not_reg0);
+    cc.constraint(f_seg_diff * f_seg_same);
+    cc.constraint(f_virt_diff * f_virt_same);
+    cc.constraint(f_adr_diff * f_adr_same);
+
+    // no change before change flag
+    cc.constraint(f_virt_diff * (adr_seg_next - adr_seg));
+    cc.constraint(f_adr_same * (adr_seg_next - adr_seg));
+    cc.constraint(f_adr_same * (adr_virt_next - adr_virt));
+
+    let range_check = f_seg_diff * (adr_seg_next - adr_seg - P::ONES)
+        + f_virt_diff * (adr_virt_next - adr_virt - P::ONES)
+        + f_adr_same * (nv.time - lv.time);
+    cc.constraint(lv.range_check - range_check);
+
+    // reads keep the same value as the current row, except for register x0
+    // f_read_next * f_adr_same * f_not_reg0 * (val_next - val);
+    let aux = lv.aux;
+    cc.constraint(aux - f_adr_same * f_not_reg0);
+    cc.constraint_transition(f_read_next * aux * (val_next - val));
+
+    // all memory is initialized to 0
+    cc.constraint_transition(f_read_next * f_adr_diff * val_next);
+
+    // register x0 is always 0
+    cc.constraint(f_reg0 * adr_seg);
+    cc.constraint(f_reg0 * adr_virt);
+    cc.constraint(f_read * f_reg0 * val);
+
+    // counter starts at 0 and increments by 1
+    cc.constraint_first_row(lv.counter);
+    cc.constraint_transition(nv.counter - lv.counter - P::ONES);
 }
 
 fn eval_all_circuit<F: RichField + Extendable<D>, const D: usize>(
@@ -61,8 +114,8 @@ fn eval_all_circuit<F: RichField + Extendable<D>, const D: usize>(
 
     let f_rw = lv.f_rw;
 
-    let f_pad = cb.sub_extension(one, f_on);
-    let cs = cb.mul_extension(f_pad, f_rw);
+    let f_off = cb.sub_extension(one, f_on);
+    let cs = cb.mul_extension(f_off, f_rw);
     cc.constraint(cb, cs);
 }
 
