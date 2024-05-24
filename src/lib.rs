@@ -1,6 +1,6 @@
 #![allow(unused)]
 
-pub mod alu;
+pub mod arith;
 pub mod cpu;
 pub mod mem;
 pub mod stark;

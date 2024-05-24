@@ -25,7 +25,7 @@ pub(crate) const N_OP_COLS: usize = core::mem::size_of::<OpCols<u8>>();
 #[repr(C)]
 #[derive(Clone, Copy, Eq, PartialEq, Debug)]
 pub(crate) struct OpCols<T> {
-    pub f_alu: T,
+    pub f_arith: T,
     pub f_lw: T,
     pub f_sw: T,
     pub f_jal: T,
@@ -36,7 +36,6 @@ pub(crate) struct OpCols<T> {
     pub f_bgeu: T,
     // pub f_blt: T,
     // pub f_bge: T,
-    pub f_lui: T,
 }
 
 pub(crate) const N_CPU_COLS: usize = core::mem::size_of::<CpuCols<u8>>();

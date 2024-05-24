@@ -6,26 +6,26 @@ use plonky2::iop::ext_target::ExtensionTarget;
 use plonky2::plonk::circuit_builder::CircuitBuilder;
 use starky::constraint_consumer::{ConstraintConsumer, RecursiveConstraintConsumer};
 
-use crate::alu::columns::{AluCols, ALU_COL_MAP};
+use crate::arith::columns::{ArithCols, ARITH_COL_MAP};
 
 /// The multiplicative inverse of 2^32.
 const GOLDILOCKS_INVERSE_REG_SIZE: u64 = 18446744065119617026;
 const REG_BITS: usize = 32;
 // const SIGN_BIT: u32 = 1 << (REG_BITS - 1);
 
-pub(crate) fn generate<F: PrimeField64>(lv: &mut AluCols<F>, filter: usize, left: u32, right: u32) {
+pub(crate) fn generate<F: PrimeField64>(lv: &mut ArithCols<F>, filter: usize, left: u32, right: u32) {
     lv.in0 = F::from_canonical_u32(left);
     lv.in1 = F::from_canonical_u32(right);
 
-    if filter == ALU_COL_MAP.op.f_add {
+    if filter == ARITH_COL_MAP.op.f_add {
         let (res, cy) = left.overflowing_add(right);
         lv.aux = F::from_canonical_u32(cy as u32);
         lv.out = F::from_canonical_u32(res);
-    } else if filter == ALU_COL_MAP.op.f_sub {
+    } else if filter == ARITH_COL_MAP.op.f_sub {
         let (diff, cy) = left.overflowing_sub(right);
         lv.aux = F::from_canonical_u32(cy as u32);
         lv.out = F::from_canonical_u32(diff);
-    } else if filter == ALU_COL_MAP.op.f_ltu {
+    } else if filter == ARITH_COL_MAP.op.f_ltu {
         let (diff, cy) = left.overflowing_sub(right);
         lv.aux = F::from_canonical_u32(diff);
         lv.out = F::from_canonical_u32(cy as u32);
@@ -34,7 +34,7 @@ pub(crate) fn generate<F: PrimeField64>(lv: &mut AluCols<F>, filter: usize, left
     };
 }
 
-pub(crate) fn eval<P: PackedField>(lv: &AluCols<P>, cc: &mut ConstraintConsumer<P>) {
+pub(crate) fn eval<P: PackedField>(lv: &ArithCols<P>, cc: &mut ConstraintConsumer<P>) {
     let f_add = lv.op.f_add;
     let f_sub = lv.op.f_sub;
     let f_ltu = lv.op.f_ltu;
@@ -47,6 +47,23 @@ pub(crate) fn eval<P: PackedField>(lv: &AluCols<P>, cc: &mut ConstraintConsumer<
     eval_add(cc, f_add, in0, in1, out, aux);
     eval_sub(cc, f_sub, in0, in1, out, aux);
     eval_ltu(cc, f_ltu, in0, in1, out, aux);
+}
+
+pub(crate) fn eval_circuit<F: RichField + Extendable<D>, const D: usize>(
+    cb: &mut CircuitBuilder<F, D>,
+    lv: &ArithCols<ExtensionTarget<D>>,
+    nv: &ArithCols<ExtensionTarget<D>>,
+    cc: &mut RecursiveConstraintConsumer<F, D>,
+) {
+    //TODO
+    let f_add = lv.op.f_add;
+    let f_sub = lv.op.f_sub;
+    let f_ltu = lv.op.f_ltu;
+
+    let in0 = lv.in0;
+    let in1 = lv.in1;
+    let out = lv.out;
+    let aux = lv.aux;
 }
 
 /// Constrains x + y == z + cy * 2^32
@@ -89,8 +106,11 @@ fn eval_addcy_circuit<F: RichField + Extendable<D>, const D: usize>(
     y: ExtensionTarget<D>,
     z: ExtensionTarget<D>,
     cy: ExtensionTarget<D>,
+    transition: bool,
 ) {
-    todo!()
+    let base = F::from_canonical_u64(1u64 << REG_BITS);
+    let base_inv = F::from_canonical_u64(GOLDILOCKS_INVERSE_REG_SIZE);
+    //TODO
 }
 
 pub(crate) fn eval_add<P: PackedField>(
@@ -178,7 +198,7 @@ mod tests {
     use plonky2::field::types::Sample;
     use rand::{Rng, SeedableRng};
 
-    use crate::alu::columns::N_ALU_COLS;
+    use crate::arith::columns::N_ARITH_COLS;
 
     use super::*;
 
@@ -196,8 +216,8 @@ mod tests {
     #[test]
     fn eval_not_addcy() {
         let mut rng = rand::thread_rng();
-        let mut lv = [F::default(); N_ALU_COLS].map(|_| F::sample(&mut rng));
-        let lv: &mut AluCols<F> = lv.borrow_mut();
+        let mut lv = [F::default(); N_ARITH_COLS].map(|_| F::sample(&mut rng));
+        let lv: &mut ArithCols<F> = lv.borrow_mut();
 
         lv.op.f_add = F::ZERO;
         lv.op.f_sub = F::ZERO;
@@ -213,8 +233,8 @@ mod tests {
     #[test]
     fn generate_eval_add() {
         let mut rng = rand::thread_rng();
-        let mut lv = [F::default(); N_ALU_COLS].map(|_| F::sample(&mut rng));
-        let lv: &mut AluCols<F> = lv.borrow_mut();
+        let mut lv = [F::default(); N_ARITH_COLS].map(|_| F::sample(&mut rng));
+        let lv: &mut ArithCols<F> = lv.borrow_mut();
 
         lv.op.f_add = F::ONE;
         lv.op.f_sub = F::ZERO;
@@ -222,7 +242,7 @@ mod tests {
 
         let left: u32 = rng.gen();
         let right: u32 = rng.gen();
-        generate(lv, ALU_COL_MAP.op.f_add, left, right);
+        generate(lv, ARITH_COL_MAP.op.f_add, left, right);
 
         let mut cc = constraint_consumer();
         eval(lv, &mut cc);
@@ -238,8 +258,8 @@ mod tests {
     #[test]
     fn generate_eval_sub() {
         let mut rng = rand::thread_rng();
-        let mut lv = [F::default(); N_ALU_COLS].map(|_| F::sample(&mut rng));
-        let lv: &mut AluCols<F> = lv.borrow_mut();
+        let mut lv = [F::default(); N_ARITH_COLS].map(|_| F::sample(&mut rng));
+        let lv: &mut ArithCols<F> = lv.borrow_mut();
 
         lv.op.f_add = F::ZERO;
         lv.op.f_sub = F::ONE;
@@ -247,7 +267,7 @@ mod tests {
 
         let left: u32 = rng.gen();
         let right: u32 = rng.gen();
-        generate(lv, ALU_COL_MAP.op.f_sub, left, right);
+        generate(lv, ARITH_COL_MAP.op.f_sub, left, right);
 
         let mut cc = constraint_consumer();
         eval(lv, &mut cc);
@@ -263,8 +283,8 @@ mod tests {
     #[test]
     fn generate_eval_ltu() {
         let mut rng = rand::thread_rng();
-        let mut lv = [F::default(); N_ALU_COLS].map(|_| F::sample(&mut rng));
-        let lv: &mut AluCols<F> = lv.borrow_mut();
+        let mut lv = [F::default(); N_ARITH_COLS].map(|_| F::sample(&mut rng));
+        let lv: &mut ArithCols<F> = lv.borrow_mut();
 
         lv.op.f_add = F::ZERO;
         lv.op.f_sub = F::ZERO;
@@ -272,7 +292,7 @@ mod tests {
 
         let left: u32 = rng.gen();
         let right: u32 = rng.gen();
-        generate(lv, ALU_COL_MAP.op.f_ltu, left, right);
+        generate(lv, ARITH_COL_MAP.op.f_ltu, left, right);
 
         let mut cc = constraint_consumer();
         eval(lv, &mut cc);

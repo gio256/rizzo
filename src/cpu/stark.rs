@@ -32,7 +32,7 @@ pub(crate) fn ctl_looking_mem<F: Field>(channel: usize) -> TableWithColumns<F> {
     TableWithColumns::new(Table::Cpu as usize, cols, filter)
 }
 
-pub(crate) fn ctl_looking_alu_reg<F: Field>() -> TableWithColumns<F> {
+pub(crate) fn ctl_looking_arith_reg<F: Field>() -> TableWithColumns<F> {
     let cols = Column::singles([
         CPU_COL_MAP.opcode,
         CPU_COL_MAP.rs1_channel().val,
@@ -43,13 +43,13 @@ pub(crate) fn ctl_looking_alu_reg<F: Field>() -> TableWithColumns<F> {
 
     let f_not_imm =
         Column::linear_combination_with_constant(vec![(CPU_COL_MAP.f_imm, F::NEG_ONE)], F::ONE);
-    let f_alu = Column::single(CPU_COL_MAP.op.f_alu);
-    let filter = Filter::new(vec![(f_not_imm, f_alu)], vec![]);
+    let f_arith = Column::single(CPU_COL_MAP.op.f_arith);
+    let filter = Filter::new(vec![(f_not_imm, f_arith)], vec![]);
 
     TableWithColumns::new(Table::Cpu as usize, cols, filter)
 }
 
-pub(crate) fn ctl_looking_alu_imm<F: Field>() -> TableWithColumns<F> {
+pub(crate) fn ctl_looking_arith_imm<F: Field>() -> TableWithColumns<F> {
     let cols = Column::singles([
         CPU_COL_MAP.opcode,
         CPU_COL_MAP.rs1_channel().val,
@@ -59,8 +59,8 @@ pub(crate) fn ctl_looking_alu_imm<F: Field>() -> TableWithColumns<F> {
     .collect();
 
     let f_imm = Column::single(CPU_COL_MAP.f_imm);
-    let f_alu = Column::single(CPU_COL_MAP.op.f_alu);
-    let filter = Filter::new(vec![(f_imm, f_alu)], vec![]);
+    let f_arith = Column::single(CPU_COL_MAP.op.f_arith);
+    let filter = Filter::new(vec![(f_imm, f_arith)], vec![]);
 
     TableWithColumns::new(Table::Cpu as usize, cols, filter)
 }
