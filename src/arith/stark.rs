@@ -13,60 +13,57 @@ use starky::evaluation_frame::{StarkEvaluationFrame, StarkFrame};
 use starky::lookup::{Column, Filter};
 use starky::stark::Stark;
 
-use crate::alu::addcy;
-use crate::alu::columns::{AluCols, ALU_COL_MAP, N_ALU_COLS};
+use crate::arith::addcy;
+use crate::arith::columns::{ArithCols, ARITH_COL_MAP, N_ARITH_COLS};
 use crate::stark::Table;
 use crate::vm::opcode::Opcode;
 
-const ALU_OPS: [(usize, u8); 3] = [
-    (ALU_COL_MAP.op.f_add, Opcode::ADD as u8),
-    (ALU_COL_MAP.op.f_sub, Opcode::SUB as u8),
-    (ALU_COL_MAP.op.f_ltu, Opcode::SLTU as u8),
+const ARITH_OPS: [(usize, u8); 3] = [
+    (ARITH_COL_MAP.op.f_add, Opcode::ADD as u8),
+    (ARITH_COL_MAP.op.f_sub, Opcode::SUB as u8),
+    (ARITH_COL_MAP.op.f_ltu, Opcode::SLTU as u8),
 ];
 
 pub(crate) fn ctl_looked<F: Field>() -> TableWithColumns<F> {
     // the first column evaluates to the opcode of the selected instruction
-    let ops = ALU_OPS.iter().map(|&(f, op)| (f, F::from_canonical_u8(op)));
+    let ops = ARITH_OPS.iter().map(|&(f, op)| (f, F::from_canonical_u8(op)));
     let mut cols = vec![Column::linear_combination(ops)];
     cols.extend(Column::singles([
-        ALU_COL_MAP.in0,
-        ALU_COL_MAP.in1,
-        ALU_COL_MAP.out,
+        ARITH_COL_MAP.in0,
+        ARITH_COL_MAP.in1,
+        ARITH_COL_MAP.out,
     ]));
 
-    let f_alu = Column::sum(ALU_OPS.iter().map(|&(f, _)| f));
-    let filter = Filter::new_simple(f_alu);
-    TableWithColumns::new(Table::Alu as usize, cols, filter)
+    let f_arith = Column::sum(ARITH_OPS.iter().map(|&(f, _)| f));
+    let filter = Filter::new_simple(f_arith);
+    TableWithColumns::new(Table::Arith as usize, cols, filter)
 }
 
 #[derive(Clone, Copy, Default)]
-pub(crate) struct AluStark<F, const D: usize> {
+pub(crate) struct ArithStark<F, const D: usize> {
     _unused: PhantomData<F>,
 }
 
-fn eval_all<P: PackedField>(lv: &AluCols<P>, nv: &AluCols<P>, cc: &mut ConstraintConsumer<P>) {
-    // cc.constraint(f_add * (f_add - P::ONES));
-    // cc.constraint(f_sub * (f_sub - P::ONES));
-    // cc.constraint(f_ltu * (f_ltu - P::ONES));
+fn eval_all<P: PackedField>(lv: &ArithCols<P>, nv: &ArithCols<P>, cc: &mut ConstraintConsumer<P>) {
     addcy::eval(lv, cc)
 }
 
 fn eval_all_circuit<F: RichField + Extendable<D>, const D: usize>(
     cb: &mut CircuitBuilder<F, D>,
-    lv: &AluCols<ExtensionTarget<D>>,
-    nv: &AluCols<ExtensionTarget<D>>,
+    lv: &ArithCols<ExtensionTarget<D>>,
+    nv: &ArithCols<ExtensionTarget<D>>,
     cc: &mut RecursiveConstraintConsumer<F, D>,
 ) {
-    todo!()
+    addcy::eval_circuit(cb, lv, nv, cc);
 }
 
-impl<F: RichField + Extendable<D>, const D: usize> Stark<F, D> for AluStark<F, D> {
-    type EvaluationFrame<FE, P, const D2: usize> = StarkFrame<P, P::Scalar, N_ALU_COLS, 0>
+impl<F: RichField + Extendable<D>, const D: usize> Stark<F, D> for ArithStark<F, D> {
+    type EvaluationFrame<FE, P, const D2: usize> = StarkFrame<P, P::Scalar, N_ARITH_COLS, 0>
     where
         FE: FieldExtension<D2, BaseField = F>,
         P: PackedField<Scalar = FE>;
 
-    type EvaluationFrameTarget = StarkFrame<ExtensionTarget<D>, ExtensionTarget<D>, N_ALU_COLS, 0>;
+    type EvaluationFrameTarget = StarkFrame<ExtensionTarget<D>, ExtensionTarget<D>, N_ARITH_COLS, 0>;
 
     fn eval_packed_generic<FE, P, const D2: usize>(
         &self,
@@ -76,10 +73,10 @@ impl<F: RichField + Extendable<D>, const D: usize> Stark<F, D> for AluStark<F, D
         FE: FieldExtension<D2, BaseField = F>,
         P: PackedField<Scalar = FE>,
     {
-        let local: &[P; N_ALU_COLS] = frame.get_local_values().try_into().unwrap();
-        let local: &AluCols<P> = local.borrow();
-        let next: &[P; N_ALU_COLS] = frame.get_next_values().try_into().unwrap();
-        let next: &AluCols<P> = next.borrow();
+        let local: &[P; N_ARITH_COLS] = frame.get_local_values().try_into().unwrap();
+        let local: &ArithCols<P> = local.borrow();
+        let next: &[P; N_ARITH_COLS] = frame.get_next_values().try_into().unwrap();
+        let next: &ArithCols<P> = next.borrow();
         eval_all(local, next, cc);
     }
 
@@ -89,10 +86,10 @@ impl<F: RichField + Extendable<D>, const D: usize> Stark<F, D> for AluStark<F, D
         frame: &Self::EvaluationFrameTarget,
         cc: &mut RecursiveConstraintConsumer<F, D>,
     ) {
-        let local: &[ExtensionTarget<D>; N_ALU_COLS] = frame.get_local_values().try_into().unwrap();
-        let local: &AluCols<ExtensionTarget<D>> = local.borrow();
-        let next: &[ExtensionTarget<D>; N_ALU_COLS] = frame.get_next_values().try_into().unwrap();
-        let next: &AluCols<ExtensionTarget<D>> = next.borrow();
+        let local: &[ExtensionTarget<D>; N_ARITH_COLS] = frame.get_local_values().try_into().unwrap();
+        let local: &ArithCols<ExtensionTarget<D>> = local.borrow();
+        let next: &[ExtensionTarget<D>; N_ARITH_COLS] = frame.get_next_values().try_into().unwrap();
+        let next: &ArithCols<ExtensionTarget<D>> = next.borrow();
         eval_all_circuit(cb, local, next, cc);
     }
 
@@ -110,12 +107,12 @@ mod tests {
     use plonky2::plonk::config::{GenericConfig, PoseidonGoldilocksConfig};
     use starky::stark_testing::{test_stark_circuit_constraints, test_stark_low_degree};
 
-    use super::AluStark;
+    use super::ArithStark;
 
     const D: usize = 2;
     type C = PoseidonGoldilocksConfig;
     type F = <C as GenericConfig<D>>::F;
-    type S = AluStark<F, D>;
+    type S = ArithStark<F, D>;
 
     #[test]
     fn stark_degree() {

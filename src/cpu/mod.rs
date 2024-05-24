@@ -11,4 +11,4 @@ pub mod memio;
 pub mod reg;
 pub mod stark;
 
-pub(crate) use stark::{ctl_looking_alu_imm, ctl_looking_alu_reg, ctl_looking_mem};
+pub(crate) use stark::{ctl_looking_arith_imm, ctl_looking_arith_reg, ctl_looking_mem};

@@ -18,30 +18,30 @@ pub(crate) fn eval<P: PackedField>(
     nv: &CpuCols<P>,
     cc: &mut ConstraintConsumer<P>,
 ) {
-    let f_alu = lv.op.f_alu;
+    let f_arith = lv.op.f_arith;
     let f_imm = lv.f_imm;
 
     // rd = rs1 + rs2
     // rd = rs1 + imm
     let ch_rs1 = lv.rs1_channel();
-    cc.constraint(f_alu * (P::ONES - ch_rs1.f_on));
-    cc.constraint(f_alu * ch_rs1.f_rw);
-    cc.constraint(f_alu * ch_rs1.adr_seg);
-    cc.constraint(f_alu * (lv.rs1_adr() - ch_rs1.adr_virt));
+    cc.constraint(f_arith * (P::ONES - ch_rs1.f_on));
+    cc.constraint(f_arith * ch_rs1.f_rw);
+    cc.constraint(f_arith * ch_rs1.adr_seg);
+    cc.constraint(f_arith * (lv.rs1_adr() - ch_rs1.adr_virt));
 
     let ch_rs2 = lv.rs2_channel();
     let use_rs2 = P::ONES - f_imm;
-    cc.constraint(f_alu * f_imm * ch_rs2.f_on);
-    cc.constraint(f_alu * use_rs2 * (P::ONES - ch_rs2.f_on));
-    cc.constraint(f_alu * use_rs2 * ch_rs2.f_rw);
-    cc.constraint(f_alu * use_rs2 * ch_rs2.adr_seg);
-    cc.constraint(f_alu * use_rs2 * (lv.rs2_adr() - ch_rs2.adr_virt));
+    cc.constraint(f_arith * f_imm * ch_rs2.f_on);
+    cc.constraint(f_arith * use_rs2 * (P::ONES - ch_rs2.f_on));
+    cc.constraint(f_arith * use_rs2 * ch_rs2.f_rw);
+    cc.constraint(f_arith * use_rs2 * ch_rs2.adr_seg);
+    cc.constraint(f_arith * use_rs2 * (lv.rs2_adr() - ch_rs2.adr_virt));
 
     let ch_rd = lv.rd_channel();
-    cc.constraint(f_alu * (P::ONES - ch_rd.f_on));
-    cc.constraint(f_alu * (P::ONES - ch_rd.f_rw));
-    cc.constraint(f_alu * ch_rd.adr_seg);
-    cc.constraint(f_alu * (lv.rd_adr() - ch_rd.adr_virt));
+    cc.constraint(f_arith * (P::ONES - ch_rd.f_on));
+    cc.constraint(f_arith * (P::ONES - ch_rd.f_rw));
+    cc.constraint(f_arith * ch_rd.adr_seg);
+    cc.constraint(f_arith * (lv.rd_adr() - ch_rd.adr_virt));
 }
 
 pub(crate) fn eval_circuit<F: RichField + Extendable<D>, const D: usize>(

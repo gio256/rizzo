@@ -6,7 +6,7 @@ use plonky2::iop::ext_target::ExtensionTarget;
 use plonky2::plonk::circuit_builder::CircuitBuilder;
 use starky::constraint_consumer::{ConstraintConsumer, RecursiveConstraintConsumer};
 
-use crate::alu::{eval_add, eval_add_transition};
+use crate::arith::{eval_add, eval_add_transition};
 use crate::cpu::columns::CpuCols;
 use crate::cpu::control_flow::INSTRUCTION_BYTES;
 

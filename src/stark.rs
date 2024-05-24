@@ -9,22 +9,22 @@ use starky::evaluation_frame::StarkFrame;
 use starky::stark::Stark;
 
 use crate::cpu::columns::N_MEM_CHANNELS;
-use crate::{alu, cpu, mem};
+use crate::{arith, cpu, mem};
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub enum Table {
-    Alu,
+    Arith,
     Cpu,
     Mem,
 }
 
 fn all_cross_table_lookups<F: Field>() -> Vec<CrossTableLookup<F>> {
-    vec![ctl_alu(), ctl_mem()]
+    vec![ctl_arith(), ctl_mem()]
 }
 
-fn ctl_alu<F: Field>() -> CrossTableLookup<F> {
-    let looking = vec![cpu::ctl_looking_alu_reg(), cpu::ctl_looking_alu_imm()];
-    let looked = alu::ctl_looked();
+fn ctl_arith<F: Field>() -> CrossTableLookup<F> {
+    let looking = vec![cpu::ctl_looking_arith_reg(), cpu::ctl_looking_arith_imm()];
+    let looked = arith::ctl_looked();
     CrossTableLookup::new(looking, looked)
 }
 
