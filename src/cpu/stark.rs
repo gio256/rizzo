@@ -164,7 +164,6 @@ impl<F: RichField + Extendable<D>, const D: usize> Stark<F, D> for CpuStark<F, D
         let local: &CpuCols<P> = local.borrow();
         let next: &[P; N_CPU_COLS] = frame.get_next_values().try_into().unwrap();
         let next: &CpuCols<P> = next.borrow();
-
         eval_all(local, next, cc)
     }
 
@@ -178,7 +177,6 @@ impl<F: RichField + Extendable<D>, const D: usize> Stark<F, D> for CpuStark<F, D
         let local: &CpuCols<ExtensionTarget<D>> = local.borrow();
         let next: &[ExtensionTarget<D>; N_CPU_COLS] = frame.get_next_values().try_into().unwrap();
         let next: &CpuCols<ExtensionTarget<D>> = next.borrow();
-
         eval_all_circuit(cb, local, next, cc);
     }
 
