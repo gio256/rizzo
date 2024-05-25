@@ -27,7 +27,13 @@ pub(crate) const N_OP_COLS: usize = core::mem::size_of::<OpCols<u8>>();
 pub(crate) struct OpCols<T> {
     pub f_arith: T,
     pub f_lw: T,
+    pub f_lh: T,
+    pub f_lb: T,
+    pub f_lhu: T,
+    pub f_lbu: T,
     pub f_sw: T,
+    pub f_sh: T,
+    pub f_sb: T,
     pub f_jal: T,
     pub f_jalr: T,
     pub f_beq: T,
@@ -71,18 +77,6 @@ impl<T: Copy> CpuCols<T> {
     pub(crate) fn rs2_channel(&self) -> &MemChannel<T> {
         const_assert!(N_MEM_CHANNELS > 2);
         &self.membus[2]
-    }
-}
-
-impl<P: PackedField> CpuCols<P> {
-    pub(crate) fn rs1_adr(&self) -> P {
-        crate::util::reg_adr(self.rs1)
-    }
-    pub(crate) fn rs2_adr(&self) -> P {
-        crate::util::reg_adr(self.rs2)
-    }
-    pub(crate) fn rd_adr(&self) -> P {
-        crate::util::reg_adr(self.rd)
     }
 }
 

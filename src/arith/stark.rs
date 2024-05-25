@@ -16,6 +16,7 @@ use starky::stark::Stark;
 use crate::arith::addcy;
 use crate::arith::columns::{ArithCols, ARITH_COL_MAP, N_ARITH_COLS};
 use crate::stark::Table;
+use crate::util::fst;
 use crate::vm::opcode::Opcode;
 
 const ARITH_OPS: [(usize, u8); 3] = [
@@ -26,16 +27,15 @@ const ARITH_OPS: [(usize, u8); 3] = [
 
 pub(crate) fn ctl_looked<F: Field>() -> TableWithColumns<F> {
     // the first column evaluates to the opcode of the selected instruction
-    let ops = ARITH_OPS.iter().map(|&(f, op)| (f, F::from_canonical_u8(op)));
-    let mut cols = vec![Column::linear_combination(ops)];
+    let ops_comb = ARITH_OPS.map(|(f, op)| (f, F::from_canonical_u8(op)));
+    let mut cols = vec![Column::linear_combination(ops_comb)];
     cols.extend(Column::singles([
         ARITH_COL_MAP.in0,
         ARITH_COL_MAP.in1,
         ARITH_COL_MAP.out,
     ]));
 
-    let f_arith = Column::sum(ARITH_OPS.iter().map(|&(f, _)| f));
-    let filter = Filter::new_simple(f_arith);
+    let filter = Filter::new_simple(Column::sum(ARITH_OPS.map(fst)));
     TableWithColumns::new(Table::Arith as usize, cols, filter)
 }
 
@@ -63,7 +63,8 @@ impl<F: RichField + Extendable<D>, const D: usize> Stark<F, D> for ArithStark<F,
         FE: FieldExtension<D2, BaseField = F>,
         P: PackedField<Scalar = FE>;
 
-    type EvaluationFrameTarget = StarkFrame<ExtensionTarget<D>, ExtensionTarget<D>, N_ARITH_COLS, 0>;
+    type EvaluationFrameTarget =
+        StarkFrame<ExtensionTarget<D>, ExtensionTarget<D>, N_ARITH_COLS, 0>;
 
     fn eval_packed_generic<FE, P, const D2: usize>(
         &self,
@@ -86,7 +87,8 @@ impl<F: RichField + Extendable<D>, const D: usize> Stark<F, D> for ArithStark<F,
         frame: &Self::EvaluationFrameTarget,
         cc: &mut RecursiveConstraintConsumer<F, D>,
     ) {
-        let local: &[ExtensionTarget<D>; N_ARITH_COLS] = frame.get_local_values().try_into().unwrap();
+        let local: &[ExtensionTarget<D>; N_ARITH_COLS] =
+            frame.get_local_values().try_into().unwrap();
         let local: &ArithCols<ExtensionTarget<D>> = local.borrow();
         let next: &[ExtensionTarget<D>; N_ARITH_COLS] = frame.get_next_values().try_into().unwrap();
         let next: &ArithCols<ExtensionTarget<D>> = next.borrow();

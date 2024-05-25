@@ -10,5 +10,3 @@ pub mod membus;
 pub mod memio;
 pub mod reg;
 pub mod stark;
-
-pub(crate) use stark::{ctl_looking_arith_imm, ctl_looking_arith_reg, ctl_looking_mem};

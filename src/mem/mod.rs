@@ -1,8 +1,6 @@
 pub mod columns;
 pub mod stark;
 
-pub(crate) use stark::ctl_looked;
-
 const SEG_SCALE_FACTOR: usize = 8;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Hash, Ord, PartialOrd)]
