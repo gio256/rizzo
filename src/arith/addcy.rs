@@ -13,7 +13,12 @@ const GOLDILOCKS_INVERSE_REG_SIZE: u64 = 18446744065119617026;
 const REG_BITS: usize = 32;
 // const SIGN_BIT: u32 = 1 << (REG_BITS - 1);
 
-pub(crate) fn generate<F: PrimeField64>(lv: &mut ArithCols<F>, filter: usize, left: u32, right: u32) {
+pub(crate) fn generate<F: PrimeField64>(
+    lv: &mut ArithCols<F>,
+    filter: usize,
+    left: u32,
+    right: u32,
+) {
     lv.in0 = F::from_canonical_u32(left);
     lv.in1 = F::from_canonical_u32(right);
 

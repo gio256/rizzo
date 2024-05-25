@@ -27,7 +27,7 @@ pub(crate) fn eval<P: PackedField>(
     cc.constraint(f_jalr * (P::ONES - ch_rs1.f_on));
     cc.constraint(f_jalr * ch_rs1.f_rw);
     cc.constraint(f_jalr * ch_rs1.adr_seg);
-    cc.constraint(f_jalr * (lv.rs1_adr() - ch_rs1.adr_virt));
+    cc.constraint(f_jalr * (lv.rs1 - ch_rs1.adr_virt));
     eval_add_transition(cc, f_jalr, lv.pc, ch_rs1.val, nv.pc, lv.f_aux0);
 
     // jal disables the rs1 memory channel
@@ -38,7 +38,7 @@ pub(crate) fn eval<P: PackedField>(
     cc.constraint(f_jump * (P::ONES - ch_rd.f_on));
     cc.constraint(f_jump * (P::ONES - ch_rd.f_rw));
     cc.constraint(f_jump * ch_rd.adr_seg);
-    cc.constraint(f_jump * (lv.rd_adr() - ch_rd.adr_virt));
+    cc.constraint(f_jump * (lv.rd - ch_rd.adr_virt));
     let ix_bytes: P = P::Scalar::from_canonical_usize(INSTRUCTION_BYTES).into();
     eval_add(cc, f_jump, lv.pc, ix_bytes, ch_rd.val, lv.f_aux1);
 

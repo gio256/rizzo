@@ -164,6 +164,10 @@ impl<F: RichField + Extendable<D>, const D: usize> Stark<F, D> for MemStark<F, D
         3
     }
 
+    fn lookups(&self) -> Vec<Lookup<F>> {
+        todo!()
+    }
+
     fn requires_ctls(&self) -> bool {
         true
     }

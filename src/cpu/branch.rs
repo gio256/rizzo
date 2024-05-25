@@ -38,7 +38,7 @@ pub(crate) fn eval<P: PackedField>(
     cc.constraint(f_branch * (P::ONES - ch_rs1.f_on));
     cc.constraint(f_branch * ch_rs1.f_rw);
     cc.constraint(f_branch * ch_rs1.adr_seg);
-    cc.constraint(f_branch * (lv.rs1_adr() - ch_rs1.adr_virt));
+    cc.constraint(f_branch * (lv.rs1 - ch_rs1.adr_virt));
     let rs1_val = ch_rs1.val;
 
     // read rs2
@@ -46,7 +46,7 @@ pub(crate) fn eval<P: PackedField>(
     cc.constraint(f_branch * (P::ONES - ch_rs2.f_on));
     cc.constraint(f_branch * ch_rs2.f_rw);
     cc.constraint(f_branch * ch_rs2.adr_seg);
-    cc.constraint(f_branch * (lv.rs2_adr() - ch_rs2.adr_virt));
+    cc.constraint(f_branch * (lv.rs2 - ch_rs2.adr_virt));
     let rs2_val = ch_rs2.val;
 
     //TODO: are these constraints sufficient for bltu and bgeu?

@@ -15,7 +15,9 @@ use starky::stark::Stark;
 
 use crate::cpu::columns::{CpuCols, CPU_COL_MAP, N_CPU_COLS, N_MEM_CHANNELS};
 use crate::cpu::{arith, branch, clock, control_flow, decode, flags, jump, membus, memio, reg};
+use crate::pack::{N_BYTES, N_BYTES_HALF};
 use crate::stark::Table;
+use crate::util::fst;
 
 fn mem_timestamp<F: Field>(channel: usize) -> Column<F> {
     let n = F::from_canonical_usize(N_MEM_CHANNELS);
@@ -62,6 +64,47 @@ pub(crate) fn ctl_looking_arith_imm<F: Field>() -> TableWithColumns<F> {
     let f_arith = Column::single(CPU_COL_MAP.op.f_arith);
     let filter = Filter::new(vec![(f_imm, f_arith)], vec![]);
 
+    TableWithColumns::new(Table::Cpu as usize, cols, filter)
+}
+
+pub(crate) fn ctl_looking_pack<F: Field>() -> TableWithColumns<F> {
+    let load_ops = [
+        (CPU_COL_MAP.op.f_lb, F::ONE),
+        (CPU_COL_MAP.op.f_lbu, F::ONE),
+        (CPU_COL_MAP.op.f_lh, F::from_canonical_usize(N_BYTES_HALF)),
+        (CPU_COL_MAP.op.f_lhu, F::from_canonical_usize(N_BYTES_HALF)),
+        (CPU_COL_MAP.op.f_lw, F::from_canonical_usize(N_BYTES)),
+    ];
+
+    let f_rw = Column::constant(F::ZERO);
+    // rs1 + imm is stored in rs2_channel.adr_virt
+    let adr_virt = Column::single(CPU_COL_MAP.rs2_channel().adr_virt);
+    let len = Column::linear_combination(load_ops);
+    let n_channels = F::from_canonical_usize(N_MEM_CHANNELS);
+    let time = Column::linear_combination([(CPU_COL_MAP.clock, n_channels)]);
+    let val = Column::single(CPU_COL_MAP.rd_channel().val);
+
+    let cols = vec![f_rw, adr_virt, len, val, time];
+    let filter = Filter::new_simple(Column::sum(load_ops.map(fst)));
+    TableWithColumns::new(Table::Cpu as usize, cols, filter)
+}
+
+pub(crate) fn ctl_looking_unpack<F: Field>() -> TableWithColumns<F> {
+    let store_ops = [
+        (CPU_COL_MAP.op.f_sb, F::ONE),
+        (CPU_COL_MAP.op.f_sh, F::from_canonical_usize(N_BYTES_HALF)),
+        (CPU_COL_MAP.op.f_sw, F::from_canonical_usize(N_BYTES)),
+    ];
+
+    let f_rw = Column::constant(F::ONE);
+    let adr_virt = Column::single(CPU_COL_MAP.rd_channel().adr_virt);
+    let len = Column::linear_combination(store_ops);
+    let n_channels = F::from_canonical_usize(N_MEM_CHANNELS);
+    let time = Column::linear_combination([(CPU_COL_MAP.clock, n_channels)]);
+    let val = Column::single(CPU_COL_MAP.rs2_channel().val);
+
+    let cols = vec![f_rw, adr_virt, len, val, time];
+    let filter = Filter::new_simple(Column::sum(store_ops.map(fst)));
     TableWithColumns::new(Table::Cpu as usize, cols, filter)
 }
 
