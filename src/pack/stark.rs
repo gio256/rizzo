@@ -64,7 +64,38 @@ pub(crate) fn ctl_looking_mem<F: Field>(i: usize) -> TableWithColumns<F> {
 }
 
 fn eval_all<P: PackedField>(lv: &PackCols<P>, nv: &PackCols<P>, cc: &mut ConstraintConsumer<P>) {
-    todo!()
+    // filter in {0, 1} and starts at 1
+    let filter: P = lv.len_idx.into_iter().sum();
+    cc.constraint(filter * (filter - P::ONES));
+    cc.constraint_first_row(filter - P::ONES);
+
+    // len_idx values in {0, 1}
+    for idx in lv.len_idx {
+        cc.constraint(idx * (idx - P::ONES));
+    }
+
+    // f_rw in {0, 1}
+    let f_rw = lv.f_rw;
+    cc.constraint(f_rw * (f_rw - P::ONES));
+
+    // all bytes beyond the length must be 0
+    for (i, idx) in lv.len_idx.into_iter().enumerate() {
+        for &byte in &lv.bytes[i + 1..] {
+            cc.constraint(idx * byte);
+        }
+    }
+
+    // all filters are on until padding starts
+    let filter_next: P = nv.len_idx.into_iter().sum();
+    cc.constraint_transition(filter_next * (filter_next - filter));
+
+    // range check
+    let count = lv.rc_count;
+    let count_next = nv.rc_count;
+    let delta = count_next - count;
+    cc.constraint_first_row(count);
+    cc.constraint_transition(delta * (delta - P::ONES));
+    cc.constraint_last_row(count - P::Scalar::from_canonical_u8(u8::MAX));
 }
 
 fn eval_all_circuit<F: RichField + Extendable<D>, const D: usize>(

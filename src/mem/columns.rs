@@ -27,9 +27,9 @@ pub(crate) struct MemCols<T> {
     pub f_seg_diff: T,
     /// 1 if adr_virt differs in the next row and adr_seg does not, 0 otherwise
     pub f_virt_diff: T,
-    pub range_check: T,
-    pub counter: T,
-    pub frequencies: T,
+    pub rc: T,
+    pub rc_count: T,
+    pub rc_freq: T,
 }
 
 const fn make_col_map() -> MemCols<usize> {

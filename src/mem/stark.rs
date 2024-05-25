@@ -78,7 +78,7 @@ fn eval_all<P: PackedField>(lv: &MemCols<P>, nv: &MemCols<P>, cc: &mut Constrain
     let range_check = f_seg_diff * (adr_seg_next - adr_seg - P::ONES)
         + f_virt_diff * (adr_virt_next - adr_virt - P::ONES)
         + f_adr_same * (nv.time - lv.time);
-    cc.constraint(lv.range_check - range_check);
+    cc.constraint(lv.rc - range_check);
 
     // reads keep the same value as the current row, except for register x0
     // f_read_next * f_adr_same * f_not_reg0 * (val_next - val);
@@ -94,9 +94,9 @@ fn eval_all<P: PackedField>(lv: &MemCols<P>, nv: &MemCols<P>, cc: &mut Constrain
     cc.constraint(f_reg0 * adr_virt);
     cc.constraint(f_read * f_reg0 * val);
 
-    // counter starts at 0 and increments by 1
-    cc.constraint_first_row(lv.counter);
-    cc.constraint_transition(nv.counter - lv.counter - P::ONES);
+    // rc_count starts at 0 and increments by 1
+    cc.constraint_first_row(lv.rc_count);
+    cc.constraint_transition(nv.rc_count - lv.rc_count - P::ONES);
 }
 
 fn eval_all_circuit<F: RichField + Extendable<D>, const D: usize>(

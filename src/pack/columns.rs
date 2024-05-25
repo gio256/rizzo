@@ -14,6 +14,8 @@ pub(crate) struct PackCols<T> {
     pub time: T,
     pub len_idx: [T; N_BYTES],
     pub bytes: [T; N_BYTES],
+    pub rc_count: T,
+    pub rc_freq: T,
 }
 
 const fn make_col_map() -> PackCols<usize> {
