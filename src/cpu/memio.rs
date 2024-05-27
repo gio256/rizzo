@@ -63,7 +63,14 @@ fn eval_store<P: PackedField>(lv: &CpuCols<P>, nv: &CpuCols<P>, cc: &mut Constra
     // cc.constraint(f_store * (P::ONES - ch_store.f_rw));
     // cc.constraint(f_store * (P::ONES - ch_store.adr_seg));
     // cc.constraint(f_store * (ch_rs2.val - ch_store.val));
-    eval_add(cc, f_store, ch_rs1.val, lv.imm, ch_store.adr_virt, lv.f_aux1);
+    eval_add(
+        cc,
+        f_store,
+        ch_rs1.val,
+        lv.imm,
+        ch_store.adr_virt,
+        lv.f_aux1,
+    );
 }
 
 pub(crate) fn eval<P: PackedField>(
