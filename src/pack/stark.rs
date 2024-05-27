@@ -1,5 +1,6 @@
 use core::borrow::Borrow;
 use core::marker::PhantomData;
+use std::iter::once;
 
 use plonky2::field::extension::{Extendable, FieldExtension};
 use plonky2::field::packed::PackedField;
@@ -47,7 +48,7 @@ pub(crate) fn ctl_looking_mem<F: Field>(i: usize) -> TableWithColumns<F> {
         .into_iter()
         .enumerate()
         .map(|(i, col)| (col, F::from_canonical_usize(i)));
-    let adr_virt_comb = std::iter::once((PACK_COL_MAP.adr_virt, F::ONE)).chain(len_sub1_comb);
+    let adr_virt_comb = once((PACK_COL_MAP.adr_virt, F::ONE)).chain(len_sub1_comb);
     let adr_virt = Column::linear_combination_with_constant(
         adr_virt_comb,
         F::NEG_ONE * F::from_canonical_usize(i),

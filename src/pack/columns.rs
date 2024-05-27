@@ -7,7 +7,7 @@ pub(crate) const N_PACK_COLS: usize = core::mem::size_of::<PackCols<u8>>();
 pub(crate) const PACK_COL_MAP: PackCols<usize> = make_col_map();
 
 #[repr(C)]
-#[derive(Clone, Copy, Eq, PartialEq, Debug)]
+#[derive(Clone, Copy, Debug, Default)]
 pub(crate) struct PackCols<T> {
     pub f_rw: T,
     pub adr_virt: T,
