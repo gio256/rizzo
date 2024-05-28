@@ -39,29 +39,29 @@ impl<A: LendIter, B: Iterator> LendIter for Zip<A, B> {
 
 #[derive(Clone)]
 #[must_use = "iterators are lazy and do nothing unless consumed"]
-pub struct WindowsMut<T, const SIZE: usize> {
-    v: T,
-    idx: usize,
+pub struct WindowsMut<T, const N: usize> {
+    slice: T,
+    start: usize,
 }
 
-impl<T, const SIZE: usize> WindowsMut<T, SIZE> {
-    pub fn new(v: T) -> Self {
-        Self { v, idx: 0 }
+impl<T, const N: usize> WindowsMut<T, N> {
+    pub fn new(slice: T) -> Self {
+        Self { slice, start: 0 }
     }
 }
 
-impl<'s, T, const SIZE: usize> LendIter for WindowsMut<&'s mut [T], SIZE> {
-    type Item<'n> = &'n mut [T; SIZE] where Self: 'n;
+impl<'a, T, const N: usize> LendIter for WindowsMut<&'a mut [T], N> {
+    type Item<'n> = &'n mut [T; N] where Self: 'n;
 
     fn next(&mut self) -> Option<Self::Item<'_>> {
-        let res = self.v.get_mut(self.idx..)?.get_mut(..SIZE)?;
-        self.idx += 1;
+        let res = self.slice[self.start..].get_mut(..N)?;
+        self.start += 1;
         Some(res.try_into().unwrap())
     }
 }
 
-pub fn windows_mut<T, const SIZE: usize>(v: &mut [T]) -> WindowsMut<&mut [T], SIZE> {
-    WindowsMut::new(v)
+pub fn windows_mut<T, const N: usize>(slice: &mut [T]) -> WindowsMut<&mut [T], N> {
+    WindowsMut::new(slice)
 }
 
 #[cfg(test)]
@@ -73,11 +73,11 @@ mod tests {
         let mut xs = [0, 1, 2, 3, 4, 5];
         let ys = [6, 7, 8, 9];
 
-        let windows = windows_mut::<_, 2>(&mut xs);
-        let mut iter = windows.zip(ys);
+        let mut iter = windows_mut::<_, 2>(&mut xs).zip(ys);
         let mut expect = [(0, 1, 6), (1, 2, 7), (2, 3, 8), (3, 4, 9)].into_iter();
         while let Some(([a, b], c)) = iter.next() {
             assert_eq!((*a, *b, c), expect.next().unwrap());
         }
+        assert!(expect.next().is_none());
     }
 }

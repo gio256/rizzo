@@ -1,3 +1,4 @@
+#![feature(array_windows)]
 #![allow(unused)]
 
 pub mod arith;
