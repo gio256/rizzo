@@ -166,7 +166,18 @@ impl<F: RichField + Extendable<D>, const D: usize> Stark<F, D> for MemStark<F, D
     }
 
     fn lookups(&self) -> Vec<Lookup<F>> {
-        todo!()
+        vec![Lookup {
+            columns: vec![
+                Column::single(MEM_COL_MAP.rc),
+                Column::single_next_row(MEM_COL_MAP.adr_virt),
+            ],
+            table_column: Column::single(MEM_COL_MAP.rc_count),
+            frequencies_column: Column::single(MEM_COL_MAP.rc_freq),
+            filter_columns: vec![
+                Default::default(),
+                Filter::new_simple(Column::single(MEM_COL_MAP.f_seg_diff)),
+            ],
+        }]
     }
 
     fn requires_ctls(&self) -> bool {
