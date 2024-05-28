@@ -15,6 +15,7 @@ use starky::lookup::{Column, Filter, Lookup};
 use starky::stark::Stark;
 
 use crate::pack::columns::{PackCols, N_PACK_COLS, PACK_COL_MAP};
+use crate::pack::N_BYTES;
 use crate::stark::Table;
 
 pub(crate) fn ctl_looked<F: Field>() -> TableWithColumns<F> {
@@ -155,7 +156,12 @@ impl<F: RichField + Extendable<D>, const D: usize> Stark<F, D> for PackStark<F, 
     }
 
     fn lookups(&self) -> Vec<Lookup<F>> {
-        todo!()
+        vec![Lookup {
+            columns: Column::singles(PACK_COL_MAP.bytes).collect(),
+            table_column: Column::single(PACK_COL_MAP.rc_count),
+            frequencies_column: Column::single(PACK_COL_MAP.rc_freq),
+            filter_columns: vec![Default::default(); N_BYTES],
+        }]
     }
 
     fn requires_ctls(&self) -> bool {
