@@ -85,7 +85,6 @@ impl MemOp {
     }
 }
 
-//TODO: range check frequencies
 pub(crate) fn gen_trace<F: RichField>(mut ops: Vec<MemOp>) -> Vec<MemCols<F>> {
     ops.sort_by_key(MemOp::sort_key);
 
