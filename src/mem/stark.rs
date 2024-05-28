@@ -68,6 +68,7 @@ fn eval_all<P: PackedField>(lv: &MemCols<P>, nv: &MemCols<P>, cc: &mut Constrain
     cc.constraint(f_reg0 * f_not_reg0);
     cc.constraint(f_seg_diff * f_seg_same);
     cc.constraint(f_virt_diff * f_virt_same);
+    // at most one diff flag should be set
     cc.constraint(f_adr_diff * f_adr_same);
 
     // no change before change flag

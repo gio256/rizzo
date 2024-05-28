@@ -48,7 +48,7 @@ pub(crate) fn gen_trace<F: RichField>(ops: Vec<PackOp>, min_rows: usize) -> Vec<
     rows
 }
 
-pub(crate) fn trace<F: RichField>(
+fn trace<F: RichField>(
     lv: &mut PackCols<F>,
     nv: &mut PackCols<F>,
     map: &mut HashMap<u8, usize>,
