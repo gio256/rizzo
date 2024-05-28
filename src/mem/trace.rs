@@ -88,26 +88,43 @@ impl MemOp {
 //TODO: range check frequencies
 pub(crate) fn gen_trace<F: RichField>(mut ops: Vec<MemOp>) -> Vec<MemCols<F>> {
     ops.sort_by_key(MemOp::sort_key);
+
+    // fill range check gaps, then sort again and add padding rows
     fill_rc_gaps(&mut ops);
-    // sort again after `fill_rc_gaps()`
     ops.sort_by_key(MemOp::sort_key);
     pad(&mut ops);
 
-    let mut rows: Vec<_> = ops.into_par_iter().map(MemOp::into_row::<F>).collect();
+    let mut rc_freq = HashMap::default();
+    let mut rows = ops
+        .into_par_iter()
+        .map(MemOp::into_row::<F>)
+        .collect::<Vec<_>>();
     let mut iter = windows_mut::<_, 2>(&mut rows);
     while let Some([lv, nv]) = iter.next() {
-        trace(lv, nv);
+        trace(lv, nv, &mut rc_freq);
+    }
+
+    for (val, freq) in rc_freq {
+        let idx: usize = val.to_canonical_u64().try_into().unwrap();
+        rows[idx].rc_freq = F::from_canonical_usize(freq);
     }
     rows
 }
 
-fn trace<F: RichField>(lv: &mut MemCols<F>, nv: &mut MemCols<F>) {
+fn trace<F: RichField>(lv: &mut MemCols<F>, nv: &mut MemCols<F>, map: &mut HashMap<F, usize>) {
     let seg_diff = lv.adr_seg != nv.adr_seg;
     let virt_diff = lv.adr_virt != nv.adr_virt && !seg_diff;
 
     lv.f_seg_diff = F::from_bool(seg_diff);
     lv.f_virt_diff = F::from_bool(virt_diff);
 
+    let reg0 = lv.adr_seg == F::ZERO && lv.adr_virt == F::ZERO;
+    lv.f_reg0 = F::from_bool(reg0);
+
+    let aux = !(seg_diff || virt_diff || reg0);
+    lv.aux = F::from_bool(aux);
+
+    // range checks
     lv.rc = if seg_diff {
         nv.adr_seg - lv.adr_seg - F::ONE
     } else if virt_diff {
@@ -115,12 +132,14 @@ fn trace<F: RichField>(lv: &mut MemCols<F>, nv: &mut MemCols<F>) {
     } else {
         nv.time - lv.time
     };
+    nv.rc_count = lv.rc_count + F::ONE;
+    let freq = map.entry(lv.rc).or_insert(0);
+    *freq += 1;
 
-    let reg0 = lv.adr_seg == F::ZERO && lv.adr_virt == F::ZERO;
-    lv.f_reg0 = F::from_bool(reg0);
-
-    let aux = !(seg_diff || virt_diff || reg0);
-    lv.aux = F::from_bool(aux);
+    if seg_diff {
+        let freq = map.entry(nv.adr_virt).or_insert(0);
+        *freq += 1;
+    }
 }
 
 fn pad(ops: &mut Vec<MemOp>) {
