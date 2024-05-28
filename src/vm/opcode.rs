@@ -3,13 +3,10 @@ pub(crate) enum Opcode {
     ADD,
     SUB,
     SLTU,
-
     LW,
     SW,
-
     JAL,
     JALR,
-
     BEQ,
     BNE,
     BLTU,
