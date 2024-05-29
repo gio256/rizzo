@@ -29,12 +29,12 @@ pub(crate) struct PackOp {
 }
 
 pub(crate) fn gen_trace<F: RichField>(ops: Vec<PackOp>, min_rows: usize) -> Vec<PackCols<F>> {
-    let ops_len = ops.iter().map(|op| usize::from(!op.bytes.is_empty())).sum();
+    let ops_len = ops.iter().filter(|op| !op.bytes.is_empty()).count();
     let n_rows = max(max(ops_len, u8::MAX.into()), min_rows).next_power_of_two();
     let mut rows: Vec<PackCols<F>> = vec![Default::default(); n_rows];
 
     let window = windows_mut::<_, 2>(&mut rows);
-    let mut iter = window.zip(ops.into_iter().filter(|op| !op.bytes.is_empty()));
+    let mut iter = window.zip_iter(ops.into_iter().filter(|op| !op.bytes.is_empty()));
     let mut rc_freq = HashMap::default();
 
     // padding rows are empty

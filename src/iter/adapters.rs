@@ -44,13 +44,36 @@ impl<A, B> Zip<A, B> {
     }
 }
 
-impl<A: LendIter, B: Iterator> LendIter for Zip<A, B> {
-    type Item<'n> = (A::Item<'n>, B::Item) where Self: 'n;
+impl<A: LendIter, B: LendIter> LendIter for Zip<A, B> {
+    type Item<'n> = (A::Item<'n>, B::Item<'n>) where Self: 'n;
 
     fn next(&mut self) -> Option<Self::Item<'_>> {
         let a = self.a.next()?;
         let b = self.b.next()?;
         Some((a, b))
+    }
+}
+
+/// Wraps an `Iterator` into an implementer of [`LendIter`].
+#[derive(Clone)]
+#[must_use = "iterators are lazy and do nothing unless consumed"]
+pub struct Lend<I> {
+    iter: I,
+}
+
+impl<I> Lend<I> {
+    pub(crate) fn new(iter: I) -> Self {
+        Self { iter }
+    }
+    pub(crate) fn from_iter<J: IntoIterator<IntoIter = I>>(it: J) -> Self {
+        Self::new(it.into_iter())
+    }
+}
+
+impl<I: Iterator> LendIter for Lend<I> {
+    type Item<'n> = I::Item where I: 'n;
+    fn next(&mut self) -> Option<I::Item> {
+        self.iter.next()
     }
 }
 
@@ -63,7 +86,7 @@ mod tests {
         let mut xs = [0, 1, 2, 3, 4, 5];
         let ys = [6, 7, 8, 9];
 
-        let mut iter = windows_mut::<_, 2>(&mut xs).zip(ys);
+        let mut iter = windows_mut::<_, 2>(&mut xs).zip_iter(ys);
         let mut expect = [(0, 1, 6), (1, 2, 7), (2, 3, 8), (3, 4, 9)].into_iter();
         while let Some(([a, b], c)) = iter.next() {
             assert_eq!((*a, *b, c), expect.next().unwrap());
