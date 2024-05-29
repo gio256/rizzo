@@ -1,4 +1,4 @@
-use crate::iter::Zip;
+use crate::iter::{Lend, Zip};
 
 /// A lending iterator trait that uses a [generic associated type][gat] to
 /// allow the [`next`] method to return an item that borrows from `self`.
@@ -28,11 +28,25 @@ pub trait LendIter {
     ///
     /// [`LendIter`]: Self
     /// [`Iterator`]: https://doc.rust-lang.org/std/iter/trait.Iterator.html
-    fn zip<U>(self, other: U) -> Zip<Self, U::IntoIter>
+    fn zip_iter<U>(self, other: U) -> Zip<Self, Lend<U::IntoIter>>
     where
         Self: Sized,
         U: IntoIterator,
     {
-        Zip::new(self, other.into_iter())
+        Zip::new(self, Lend::from_iter(other))
     }
 }
+
+// pub trait IntoLendIter {
+//     type Item<'n> where Self: 'n;
+//     type IntoLend<'n>: LendIter<Item<'n> = Self::Item<'n>> where Self: 'n;
+//     fn into_lend<'a>(self) -> Self::IntoLend<'a>;
+// }
+// impl<I: LendIter> IntoLendIter for I {
+//     type Item<'n> = I::Item<'n> where I: 'n;
+//     type IntoLend<'n> = I where I: 'n;
+//     #[inline]
+//     fn into_lend<'a>(self) -> I where I: 'a {
+//         self
+//     }
+// }
