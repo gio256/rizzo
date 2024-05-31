@@ -17,7 +17,7 @@ use crate::iter::{Lend, Zip};
 /// [`windows_mut`]: crate::iter::windows_mut
 /// [rough edges]: https://github.com/rust-lang/rust/issues/92985
 /// [baby steps]: https://smallcultfollowing.com/babysteps/blog/2023/05/09/giving-lending-and-async-closures/
-pub trait LendIter {
+pub(crate) trait LendIter {
     /// The type of the elements being iterated over.
     type Item<'n>
     where
@@ -40,44 +40,5 @@ pub trait LendIter {
         U: IntoIterator,
     {
         Zip::new(self, Lend::from_iter(other))
-    }
-
-    /// 'Zips up' two lending iterators into a single lending iterator over
-    /// pairs of items.
-    fn zip<'a, U>(self, other: U) -> Zip<Self, U::IntoLend<'a>>
-    where
-        Self: Sized,
-        U: IntoLendIter,
-    {
-        Zip::new(self, other.into_lend())
-    }
-}
-
-/// Conversion into [`LendIter`].
-pub trait IntoLendIter {
-    /// The type of the elements being iterated over.
-    type Item<'n>
-    where
-        Self: 'n;
-
-    /// Which kind of lending iterator are we turning this into?
-    type IntoLend<'n>: LendIter<Item<'n> = Self::Item<'n>>
-    where
-        Self: 'n;
-
-    /// Creates a lending iterator from `Self`.
-    fn into_lend<'a>(self) -> Self::IntoLend<'a>;
-}
-
-impl<I: LendIter> IntoLendIter for I {
-    type Item<'n> = I::Item<'n> where I: 'n;
-    type IntoLend<'n> = I where I: 'n;
-
-    #[inline]
-    fn into_lend<'a>(self) -> I
-    where
-        I: 'a,
-    {
-        self
     }
 }
