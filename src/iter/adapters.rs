@@ -1,45 +1,46 @@
 use crate::iter::LendIter;
 
-/// This `struct` is created by [`windows_mut`].
-#[derive(Clone)]
-#[must_use = "iterators are lazy and do nothing unless consumed"]
-pub struct WindowsMut<T, const N: usize> {
-    slice: T,
-    start: usize,
+/// Returns a lending iterator over all contiguous windows of length `N`.
+/// If the slice is shorter than `N`, the iterator returns no values.
+pub(crate) fn windows_mut<T, const N: usize>(slice: &mut [T]) -> Windows<&mut [T], N> {
+    Windows::new(slice)
 }
 
-impl<T, const N: usize> WindowsMut<T, N> {
-    pub fn new(slice: T) -> Self {
-        Self { slice, start: 0 }
+/// This `struct` is created by [`windows_mut`].
+#[derive(Clone, Copy, Debug)]
+#[must_use = "iterators are lazy and do nothing unless consumed"]
+pub(crate) struct Windows<T, const N: usize> {
+    slice: T,
+    head: usize,
+}
+
+impl<T, const N: usize> Windows<T, N> {
+    pub(crate) fn new(slice: T) -> Self {
+        const { assert!(N != 0, "window size must be nonzero") }
+        Self { slice, head: 0 }
     }
 }
 
-impl<'a, T, const N: usize> LendIter for WindowsMut<&'a mut [T], N> {
+impl<'a, T, const N: usize> LendIter for Windows<&'a mut [T], N> {
     type Item<'n> = &'n mut [T; N] where Self: 'n;
 
     fn next(&mut self) -> Option<Self::Item<'_>> {
-        let res = self.slice[self.start..].get_mut(..N)?;
-        self.start += 1;
+        let res = self.slice.get_mut(self.head..)?.get_mut(..N)?;
+        self.head += 1;
         Some(res.try_into().unwrap())
     }
 }
 
-/// Returns a lending iterator over all contiguous windows of length `N`.
-/// If the slice is shorter than `N`, the iterator returns no values.
-pub fn windows_mut<T, const N: usize>(slice: &mut [T]) -> WindowsMut<&mut [T], N> {
-    WindowsMut::new(slice)
-}
-
 /// This `struct` is created by [`LendIter::zip`].
-#[derive(Clone)]
+#[derive(Clone, Copy, Debug)]
 #[must_use = "iterators are lazy and do nothing unless consumed"]
-pub struct Zip<A, B> {
+pub(crate) struct Zip<A, B> {
     a: A,
     b: B,
 }
 
 impl<A, B> Zip<A, B> {
-    pub fn new(a: A, b: B) -> Self {
+    pub(crate) fn new(a: A, b: B) -> Self {
         Self { a, b }
     }
 }
@@ -55,9 +56,9 @@ impl<A: LendIter, B: LendIter> LendIter for Zip<A, B> {
 }
 
 /// Wraps an `Iterator` into an implementer of [`LendIter`].
-#[derive(Clone)]
+#[derive(Clone, Copy, Debug)]
 #[must_use = "iterators are lazy and do nothing unless consumed"]
-pub struct Lend<I> {
+pub(crate) struct Lend<I> {
     iter: I,
 }
 
@@ -65,6 +66,7 @@ impl<I> Lend<I> {
     pub(crate) fn new(iter: I) -> Self {
         Self { iter }
     }
+
     pub(crate) fn from_iter<J: IntoIterator<IntoIter = I>>(it: J) -> Self {
         Self::new(it.into_iter())
     }
@@ -72,6 +74,7 @@ impl<I> Lend<I> {
 
 impl<I: Iterator> LendIter for Lend<I> {
     type Item<'n> = I::Item where I: 'n;
+
     fn next(&mut self) -> Option<I::Item> {
         self.iter.next()
     }
