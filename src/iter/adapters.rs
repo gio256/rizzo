@@ -31,7 +31,7 @@ impl<'a, T, const N: usize> LendIter for Windows<&'a mut [T], N> {
     }
 }
 
-/// This `struct` is created by [`LendIter::zip`].
+/// This `struct` is created by [`LendIter::zip_iter`].
 #[derive(Clone, Copy, Debug)]
 #[must_use = "iterators are lazy and do nothing unless consumed"]
 pub(crate) struct Zip<A, B> {

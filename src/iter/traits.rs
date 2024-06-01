@@ -15,7 +15,7 @@ use crate::iter::{Lend, Zip};
 /// [gat]: https://blog.rust-lang.org/2022/10/28/gats-stabilization.html
 /// [`next`]: Self::next
 /// [`windows_mut`]: crate::iter::windows_mut
-/// [rough edges]: https://github.com/rust-lang/rust/issues/92985
+/// [rough edges]: https://sabrinajewson.org/blog/the-better-alternative-to-lifetime-gats
 /// [baby steps]: https://smallcultfollowing.com/babysteps/blog/2023/05/09/giving-lending-and-async-closures/
 pub(crate) trait LendIter {
     /// The type of the elements being iterated over.
