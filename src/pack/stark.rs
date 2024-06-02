@@ -182,13 +182,13 @@ mod tests {
     type S = PackStark<F, D>;
 
     #[test]
-    fn stark_degree() {
+    fn test_stark_degree() {
         let stark: S = Default::default();
         test_stark_low_degree(stark).unwrap();
     }
 
     // #[test]
-    // fn stark_circuit() {
+    // fn test_stark_circuit() {
     //     let stark: S = Default::default();
     //     test_stark_circuit_constraints::<F, C, S, D>(stark).unwrap();
     // }

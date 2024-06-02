@@ -2,6 +2,9 @@
 pub(crate) enum Opcode {
     ADD,
     SUB,
+    AND,
+    OR,
+    XOR,
     SLTU,
     LW,
     SW,
