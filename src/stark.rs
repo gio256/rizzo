@@ -10,18 +10,19 @@ use starky::stark::Stark;
 
 use crate::cpu::columns::N_MEM_CHANNELS;
 use crate::pack::N_BYTES;
-use crate::{arith, cpu, mem, pack};
+use crate::{arith, cpu, logic, mem, pack};
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub enum Table {
     Arith,
+    Logic,
     Cpu,
     Mem,
     Pack,
 }
 
 fn all_cross_table_lookups<F: Field>() -> Vec<CrossTableLookup<F>> {
-    vec![ctl_arith(), ctl_byte_packing(), ctl_mem()]
+    vec![ctl_arith(), ctl_logic(), ctl_byte_packing(), ctl_mem()]
 }
 
 fn ctl_arith<F: Field>() -> CrossTableLookup<F> {
@@ -30,6 +31,15 @@ fn ctl_arith<F: Field>() -> CrossTableLookup<F> {
         cpu::stark::ctl_looking_arith_imm(),
     ];
     let looked = arith::stark::ctl_looked();
+    CrossTableLookup::new(looking, looked)
+}
+
+fn ctl_logic<F: Field>() -> CrossTableLookup<F> {
+    let looking = vec![
+        cpu::stark::ctl_looking_logic_reg(),
+        cpu::stark::ctl_looking_logic_imm(),
+    ];
+    let looked = logic::stark::ctl_looked();
     CrossTableLookup::new(looking, looked)
 }
 

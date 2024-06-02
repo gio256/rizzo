@@ -37,12 +37,11 @@ fn eval_all<P: PackedField>(lv: &MemCols<P>, nv: &MemCols<P>, cc: &mut Constrain
     cc.constraint(f_on * f_off);
 
     // f_rw in {0, 1} is enforced by CTL
-    let f_write = lv.f_rw;
-    let f_read = P::ONES - f_write;
+    let f_read = P::ONES - lv.f_rw;
     let f_read_next = P::ONES - nv.f_rw;
 
     // padding rows must be reads
-    cc.constraint(f_off * f_write);
+    cc.constraint(f_off * lv.f_rw);
 
     // local values
     let adr_seg = lv.adr_seg;
@@ -198,13 +197,13 @@ mod tests {
     type S = MemStark<F, D>;
 
     #[test]
-    fn stark_degree() {
+    fn test_stark_degree() {
         let stark: S = Default::default();
         test_stark_low_degree(stark).unwrap();
     }
 
     // #[test]
-    // fn stark_circuit() {
+    // fn test_stark_circuit() {
     //     let stark: S = Default::default();
     //     test_stark_circuit_constraints::<F, C, S, D>(stark).unwrap();
     // }

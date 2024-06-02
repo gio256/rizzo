@@ -21,6 +21,7 @@ use crate::pack::columns::{PackCols, N_PACK_COLS, PACK_COL_MAP};
 use crate::pack::N_BYTES;
 use crate::stark::Table;
 
+#[derive(Clone, Debug)]
 pub(crate) struct PackOp {
     pub rw: bool,
     pub adr_virt: u32,

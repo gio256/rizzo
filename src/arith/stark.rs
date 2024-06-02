@@ -27,8 +27,8 @@ const ARITH_OPS: [(usize, u8); 3] = [
 
 pub(crate) fn ctl_looked<F: Field>() -> TableWithColumns<F> {
     // the first column evaluates to the opcode of the selected instruction
-    let ops_comb = ARITH_OPS.map(|(f, op)| (f, F::from_canonical_u8(op)));
-    let mut cols = vec![Column::linear_combination(ops_comb)];
+    let op_comb = ARITH_OPS.map(|(f, op)| (f, F::from_canonical_u8(op)));
+    let mut cols = vec![Column::linear_combination(op_comb)];
     cols.extend(Column::singles([
         ARITH_COL_MAP.in0,
         ARITH_COL_MAP.in1,
@@ -117,13 +117,13 @@ mod tests {
     type S = ArithStark<F, D>;
 
     #[test]
-    fn stark_degree() {
+    fn test_stark_degree() {
         let stark: S = Default::default();
         test_stark_low_degree(stark).unwrap();
     }
 
     // #[test]
-    // fn stark_circuit() {
+    // fn test_stark_circuit() {
     //     let stark: S = Default::default();
     //     test_stark_circuit_constraints::<F, C, S, D>(stark).unwrap();
     // }

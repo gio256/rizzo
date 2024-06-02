@@ -219,7 +219,7 @@ mod tests {
     }
 
     #[test]
-    fn eval_not_addcy() {
+    fn test_eval_not_addcy() {
         let mut rng = rand::thread_rng();
         let mut lv = [F::default(); N_ARITH_COLS].map(|_| F::sample(&mut rng));
         let lv: &mut ArithCols<F> = lv.borrow_mut();
@@ -236,7 +236,7 @@ mod tests {
     }
 
     #[test]
-    fn generate_eval_add() {
+    fn test_generate_eval_add() {
         let mut rng = rand::thread_rng();
         let mut lv = [F::default(); N_ARITH_COLS].map(|_| F::sample(&mut rng));
         let lv: &mut ArithCols<F> = lv.borrow_mut();
@@ -261,7 +261,7 @@ mod tests {
     }
 
     #[test]
-    fn generate_eval_sub() {
+    fn test_generate_eval_sub() {
         let mut rng = rand::thread_rng();
         let mut lv = [F::default(); N_ARITH_COLS].map(|_| F::sample(&mut rng));
         let lv: &mut ArithCols<F> = lv.borrow_mut();
@@ -286,7 +286,7 @@ mod tests {
     }
 
     #[test]
-    fn generate_eval_ltu() {
+    fn test_generate_eval_ltu() {
         let mut rng = rand::thread_rng();
         let mut lv = [F::default(); N_ARITH_COLS].map(|_| F::sample(&mut rng));
         let lv: &mut ArithCols<F> = lv.borrow_mut();
