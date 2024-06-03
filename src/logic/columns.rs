@@ -10,7 +10,7 @@ pub(crate) const N_LOGIC_COLS: usize = core::mem::size_of::<LogicCols<u8>>();
 pub(crate) const LOGIC_COL_MAP: LogicCols<usize> = make_col_map();
 
 #[repr(C)]
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Debug)]
 pub(crate) struct OpCols<T: Copy> {
     pub f_and: T,
     pub f_xor: T,
@@ -18,7 +18,7 @@ pub(crate) struct OpCols<T: Copy> {
 }
 
 #[repr(C)]
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Debug)]
 pub(crate) struct LogicCols<T: Copy> {
     pub op: OpCols<T>,
     pub in0: [T; N_BITS],

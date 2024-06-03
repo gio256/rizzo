@@ -12,7 +12,7 @@ pub(crate) fn eval<P: PackedField>(
     nv: &CpuCols<P>,
     cc: &mut ConstraintConsumer<P>,
 ) {
-    for chan in lv.membus {
+    for chan in &lv.membus {
         cc.constraint(chan.f_on * (chan.f_on - P::ONES));
         cc.constraint(chan.f_rw * (chan.f_rw - P::ONES));
         // adr_seg must be either 0 (register) or 1 (main memory)

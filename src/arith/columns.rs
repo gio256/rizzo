@@ -4,7 +4,7 @@ pub(crate) const N_ARITH_COLS: usize = core::mem::size_of::<ArithCols<u8>>();
 pub(crate) const ARITH_COL_MAP: ArithCols<usize> = make_col_map();
 
 #[repr(C)]
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub(crate) struct OpCols<T> {
     pub f_add: T,
     pub f_sub: T,
@@ -12,7 +12,7 @@ pub(crate) struct OpCols<T> {
 }
 
 #[repr(C)]
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub(crate) struct ArithCols<T> {
     pub op: OpCols<T>,
     pub in0: T,
