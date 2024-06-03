@@ -26,7 +26,7 @@ fn mem_timestamp<F: Field>(channel: usize) -> Column<F> {
 }
 
 pub(crate) fn ctl_looking_mem<F: Field>(channel: usize) -> TableWithColumns<F> {
-    let ch = CPU_COL_MAP.membus[channel];
+    let ch = &CPU_COL_MAP.membus[channel];
     let mut cols: Vec<_> = Column::singles([ch.f_rw, ch.adr_seg, ch.adr_virt, ch.val]).collect();
     cols.push(mem_timestamp(channel));
 

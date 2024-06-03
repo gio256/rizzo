@@ -11,7 +11,7 @@ pub(crate) const N_MEM_CHANNELS: usize = 3;
 pub(crate) const N_MEM_CHANNEL_COLS: usize = core::mem::size_of::<MemChannel<u8>>();
 
 #[repr(C)]
-#[derive(Clone, Copy, Eq, PartialEq, Debug)]
+#[derive(Clone, Eq, PartialEq, Debug)]
 pub(crate) struct MemChannel<T> {
     pub f_on: T,
     pub f_rw: T,
@@ -23,7 +23,7 @@ pub(crate) struct MemChannel<T> {
 pub(crate) const N_OP_COLS: usize = core::mem::size_of::<OpCols<u8>>();
 
 #[repr(C)]
-#[derive(Clone, Copy, Eq, PartialEq, Debug)]
+#[derive(Clone, Eq, PartialEq, Debug)]
 pub(crate) struct OpCols<T> {
     pub f_arith: T,
     pub f_logic: T,
@@ -49,7 +49,7 @@ pub(crate) const N_CPU_COLS: usize = core::mem::size_of::<CpuCols<u8>>();
 pub(crate) const CPU_COL_MAP: CpuCols<usize> = make_col_map();
 
 #[repr(C)]
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Debug)]
 pub(crate) struct CpuCols<T: Copy> {
     pub clock: T,
     pub pc: T,

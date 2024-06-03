@@ -5,7 +5,7 @@ pub(crate) const N_MEM_COLS: usize = core::mem::size_of::<MemCols<u8>>();
 pub(crate) const MEM_COL_MAP: MemCols<usize> = make_col_map();
 
 #[repr(C)]
-#[derive(Clone, Copy, Debug, Default)]
+#[derive(Clone, Debug, Default)]
 pub(crate) struct MemCols<T> {
     /// 1 if this is a real memory operation, 0 if it's a padding row
     pub f_on: T,
