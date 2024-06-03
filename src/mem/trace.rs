@@ -6,10 +6,12 @@ use core::marker::PhantomData;
 use hashbrown::HashMap;
 use plonky2::field::extension::{Extendable, FieldExtension};
 use plonky2::field::packed::PackedField;
+use plonky2::field::polynomial::PolynomialValues;
 use plonky2::field::types::Field;
 use plonky2::hash::hash_types::RichField;
 use plonky2::iop::ext_target::ExtensionTarget;
 use plonky2::plonk::circuit_builder::CircuitBuilder;
+use plonky2::util::transpose;
 use plonky2_maybe_rayon::{MaybeIntoParIter, ParallelIterator};
 use starky::constraint_consumer::{ConstraintConsumer, RecursiveConstraintConsumer};
 use starky::cross_table_lookup::TableWithColumns;
@@ -85,7 +87,24 @@ impl MemOp {
     }
 }
 
-pub(crate) fn gen_trace<F: RichField>(mut ops: Vec<MemOp>) -> Vec<MemCols<F>> {
+pub(crate) fn gen_trace<F: RichField>(mut ops: Vec<MemOp>) -> Vec<PolynomialValues<F>> {
+    let trace = gen_trace_cols(ops);
+    dbg!(trace.clone());
+    let trace_rows: Vec<_> = trace.iter().map(MemCols::to_vec).collect();
+    let trace_cols = transpose(&trace_rows);
+    trace_cols.into_iter().map(PolynomialValues::new).collect()
+}
+
+fn gen_raw_trace<F: RichField>(mut ops: Vec<MemOp>) -> Vec<[F; N_MEM_COLS]> {
+    let trace: Vec<MemCols<F>> = gen_trace_cols(ops);
+    let (ptr, len, cap) = trace.into_raw_parts();
+    unsafe {
+        let ptr = ptr as *mut [F; N_MEM_COLS];
+        Vec::from_raw_parts(ptr, len, cap)
+    }
+}
+
+pub(crate) fn gen_trace_cols<F: RichField>(mut ops: Vec<MemOp>) -> Vec<MemCols<F>> {
     ops.sort_by_key(MemOp::sort_key);
 
     // fill range check gaps, then sort again and add padding rows
@@ -150,9 +169,8 @@ fn pad(ops: &mut Vec<MemOp>) {
     };
     let len = ops.len();
     let padded_len = len.next_power_of_two();
-    for _ in len..padded_len {
-        ops.push(pad_op)
-    }
+    println!("padding from {} to {} rows.", len, padded_len);
+    ops.extend((len..padded_len).map(|_| pad_op));
 }
 
 fn fill_rc_gaps(ops: &mut Vec<MemOp>) {
