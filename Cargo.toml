@@ -13,3 +13,4 @@ static_assertions = "1.1.0"
 
 [dev-dependencies]
 rand = "0.8.5"
+paste = "1.0"
