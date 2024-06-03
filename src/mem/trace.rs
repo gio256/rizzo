@@ -89,7 +89,6 @@ impl MemOp {
 
 pub(crate) fn gen_trace<F: RichField>(mut ops: Vec<MemOp>) -> Vec<PolynomialValues<F>> {
     let trace = gen_trace_cols(ops);
-    dbg!(trace.clone());
     let trace_rows: Vec<_> = trace.iter().map(MemCols::to_vec).collect();
     let trace_cols = transpose(&trace_rows);
     trace_cols.into_iter().map(PolynomialValues::new).collect()
@@ -110,10 +109,9 @@ pub(crate) fn gen_trace_cols<F: RichField>(mut ops: Vec<MemOp>) -> Vec<MemCols<F
         .collect::<Vec<_>>();
     let mut iter = windows_mut::<_, 2>(&mut rows);
     while let Some([lv, nv]) = iter.next() {
-        trace(lv, nv, &mut rc_freq);
-        trace_local(lv, &mut rc_freq);
+        trace(lv, Some(nv), &mut rc_freq);
     }
-    trace_local(rows.last_mut().unwrap(), &mut rc_freq);
+    trace(rows.last_mut().unwrap(), None, &mut rc_freq);
 
     for (val, freq) in rc_freq {
         let idx: usize = val.to_canonical_u64().try_into().unwrap();
@@ -122,40 +120,44 @@ pub(crate) fn gen_trace_cols<F: RichField>(mut ops: Vec<MemOp>) -> Vec<MemCols<F
     rows
 }
 
-fn trace_local<F: RichField>(lv: &mut MemCols<F>, map: &mut HashMap<F, usize>) {
-    let freq = map.entry(lv.rc).or_insert(0);
-    *freq += 1;
-}
-
-fn trace<F: RichField>(lv: &mut MemCols<F>, nv: &mut MemCols<F>, map: &mut HashMap<F, usize>) {
-    let seg_diff = lv.adr_seg != nv.adr_seg;
-    let virt_diff = lv.adr_virt != nv.adr_virt && !seg_diff;
-
-    lv.f_seg_diff = F::from_bool(seg_diff);
-    lv.f_virt_diff = F::from_bool(virt_diff);
-
+fn trace<F: RichField>(
+    lv: &mut MemCols<F>,
+    nv: Option<&mut MemCols<F>>,
+    map: &mut HashMap<F, usize>,
+) {
     let reg0 = lv.adr_seg == F::ZERO && lv.adr_virt == F::ZERO;
     lv.f_reg0 = F::from_bool(reg0);
 
-    let aux = !(seg_diff || virt_diff || reg0);
-    lv.aux = F::from_bool(aux);
+    if let Some(nv) = nv {
+        let seg_diff = lv.adr_seg != nv.adr_seg;
+        let virt_diff = lv.adr_virt != nv.adr_virt && !seg_diff;
 
-    // range check
-    lv.rc = if seg_diff {
-        nv.adr_seg - lv.adr_seg - F::ONE
-    } else if virt_diff {
-        nv.adr_virt - lv.adr_virt - F::ONE
-    } else {
-        nv.time - lv.time
-    };
+        lv.f_seg_diff = F::from_bool(seg_diff);
+        lv.f_virt_diff = F::from_bool(virt_diff);
 
-    // increment rc_count column
-    nv.rc_count = lv.rc_count + F::ONE;
+        let aux = !(seg_diff || virt_diff || reg0);
+        lv.aux = F::from_bool(aux);
 
-    if seg_diff {
-        let freq = map.entry(nv.adr_virt).or_insert(0);
-        *freq += 1;
+        // range check
+        lv.rc = if seg_diff {
+            nv.adr_seg - lv.adr_seg - F::ONE
+        } else if virt_diff {
+            nv.adr_virt - lv.adr_virt - F::ONE
+        } else {
+            nv.time - lv.time
+        };
+
+        // increment rc_count column
+        nv.rc_count = lv.rc_count + F::ONE;
+
+        if seg_diff {
+            let freq = map.entry(nv.adr_virt).or_insert(0);
+            *freq += 1;
+        }
     }
+
+    let freq = map.entry(lv.rc).or_insert(0);
+    *freq += 1;
 }
 
 fn pad(ops: &mut Vec<MemOp>) {
