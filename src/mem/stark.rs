@@ -70,20 +70,20 @@ fn eval_all<P: PackedField>(lv: &MemCols<P>, nv: &MemCols<P>, cc: &mut Constrain
     // at most one diff flag should be set
     cc.constraint(f_adr_diff * f_adr_same);
 
-    // no change before change flag
-    cc.constraint(f_virt_diff * (adr_seg_next - adr_seg));
-    cc.constraint(f_adr_same * (adr_seg_next - adr_seg));
-    cc.constraint(f_adr_same * (adr_virt_next - adr_virt));
+    // no change before diff flag
+    cc.constraint_transition(f_virt_diff * (adr_seg_next - adr_seg));
+    cc.constraint_transition(f_adr_same * (adr_seg_next - adr_seg));
+    cc.constraint_transition(f_adr_same * (adr_virt_next - adr_virt));
 
     let range_check = f_seg_diff * (adr_seg_next - adr_seg - P::ONES)
         + f_virt_diff * (adr_virt_next - adr_virt - P::ONES)
         + f_adr_same * (nv.time - lv.time);
-    cc.constraint(lv.rc - range_check);
+    cc.constraint_transition(lv.rc - range_check);
 
     // reads keep the same value as the current row, except for register x0
     // f_read_next * f_adr_same * f_not_reg0 * (val_next - val);
     let aux = lv.aux;
-    cc.constraint(aux - f_adr_same * f_not_reg0);
+    cc.constraint_transition(aux - f_adr_same * f_not_reg0);
     cc.constraint_transition(f_read_next * aux * (val_next - val));
 
     // all memory is initialized to 0
