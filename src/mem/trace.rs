@@ -95,15 +95,6 @@ pub(crate) fn gen_trace<F: RichField>(mut ops: Vec<MemOp>) -> Vec<PolynomialValu
     trace_cols.into_iter().map(PolynomialValues::new).collect()
 }
 
-fn gen_raw_trace<F: RichField>(mut ops: Vec<MemOp>) -> Vec<[F; N_MEM_COLS]> {
-    let trace: Vec<MemCols<F>> = gen_trace_cols(ops);
-    let (ptr, len, cap) = trace.into_raw_parts();
-    unsafe {
-        let ptr = ptr as *mut [F; N_MEM_COLS];
-        Vec::from_raw_parts(ptr, len, cap)
-    }
-}
-
 pub(crate) fn gen_trace_cols<F: RichField>(mut ops: Vec<MemOp>) -> Vec<MemCols<F>> {
     ops.sort_by_key(MemOp::sort_key);
 
