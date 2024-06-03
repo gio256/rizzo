@@ -111,13 +111,20 @@ pub(crate) fn gen_trace_cols<F: RichField>(mut ops: Vec<MemOp>) -> Vec<MemCols<F
     let mut iter = windows_mut::<_, 2>(&mut rows);
     while let Some([lv, nv]) = iter.next() {
         trace(lv, nv, &mut rc_freq);
+        trace_local(lv, &mut rc_freq);
     }
+    trace_local(rows.last_mut().unwrap(), &mut rc_freq);
 
     for (val, freq) in rc_freq {
         let idx: usize = val.to_canonical_u64().try_into().unwrap();
         rows[idx].rc_freq = F::from_canonical_usize(freq);
     }
     rows
+}
+
+fn trace_local<F: RichField>(lv: &mut MemCols<F>, map: &mut HashMap<F, usize>) {
+    let freq = map.entry(lv.rc).or_insert(0);
+    *freq += 1;
 }
 
 fn trace<F: RichField>(lv: &mut MemCols<F>, nv: &mut MemCols<F>, map: &mut HashMap<F, usize>) {
@@ -133,7 +140,7 @@ fn trace<F: RichField>(lv: &mut MemCols<F>, nv: &mut MemCols<F>, map: &mut HashM
     let aux = !(seg_diff || virt_diff || reg0);
     lv.aux = F::from_bool(aux);
 
-    // range checks
+    // range check
     lv.rc = if seg_diff {
         nv.adr_seg - lv.adr_seg - F::ONE
     } else if virt_diff {
@@ -141,9 +148,9 @@ fn trace<F: RichField>(lv: &mut MemCols<F>, nv: &mut MemCols<F>, map: &mut HashM
     } else {
         nv.time - lv.time
     };
+
+    // increment rc_count column
     nv.rc_count = lv.rc_count + F::ONE;
-    let freq = map.entry(lv.rc).or_insert(0);
-    *freq += 1;
 
     if seg_diff {
         let freq = map.entry(nv.adr_virt).or_insert(0);
