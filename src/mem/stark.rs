@@ -186,11 +186,18 @@ impl<F: RichField + Extendable<D>, const D: usize> Stark<F, D> for MemStark<F, D
 
 #[cfg(test)]
 mod tests {
+    use crate::mem::trace::{gen_trace, MemAddress, MemKind, MemOp};
+    use crate::mem::Segment;
     use plonky2::plonk::config::{GenericConfig, PoseidonGoldilocksConfig};
+    use plonky2::util::timing::TimingTree;
+    use starky::config::StarkConfig;
+    use starky::prover::prove;
     use starky::stark_testing::{test_stark_circuit_constraints, test_stark_low_degree};
+    use starky::verifier::verify_stark_proof;
 
     use super::MemStark;
 
+    const CFG: StarkConfig = StarkConfig::standard_fast_config();
     const D: usize = 2;
     type C = PoseidonGoldilocksConfig;
     type F = <C as GenericConfig<D>>::F;
@@ -207,4 +214,46 @@ mod tests {
     //     let stark: S = Default::default();
     //     test_stark_circuit_constraints::<F, C, S, D>(stark).unwrap();
     // }
+
+    #[test]
+    fn test_gen_eval() {
+        crate::util::impl_stark_no_ctls!(MemStark);
+        type S = MemStarkNoCtls<F, D>;
+
+        let stark: S = Default::default();
+        let mut ops = vec![
+            MemOp {
+                on: true,
+                time: 1,
+                kind: MemKind::Read,
+                adr: MemAddress::new(Segment::Reg, 0),
+                val: 0,
+            },
+            MemOp {
+                on: true,
+                time: 2,
+                kind: MemKind::Write,
+                adr: MemAddress::new(Segment::Reg, 1),
+                val: 1,
+            },
+            MemOp {
+                on: true,
+                time: 3,
+                kind: MemKind::Read,
+                adr: MemAddress::new(Segment::Reg, 1),
+                val: 1,
+            },
+            MemOp {
+                on: true,
+                time: 4,
+                kind: MemKind::Read,
+                adr: MemAddress::new(Segment::Reg, 0),
+                val: 0,
+            },
+        ];
+        let trace = gen_trace::<F>(ops);
+        let mut t = TimingTree::default();
+        let proof = prove::<F, C, S, D>(stark, &CFG, trace, &[], &mut t).unwrap();
+        verify_stark_proof(stark, proof, &CFG).unwrap();
+    }
 }
