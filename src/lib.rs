@@ -1,4 +1,5 @@
 #![feature(array_windows)]
+#![feature(vec_into_raw_parts)]
 #![allow(unused)]
 
 pub mod arith;

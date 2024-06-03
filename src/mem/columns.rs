@@ -32,6 +32,12 @@ pub(crate) struct MemCols<T> {
     pub rc_freq: T,
 }
 
+impl<T: Copy> MemCols<T> {
+    pub(crate) fn to_vec(&self) -> Vec<T> {
+        Borrow::<[T; N_MEM_COLS]>::borrow(self).to_vec()
+    }
+}
+
 const fn make_col_map() -> MemCols<usize> {
     let arr = crate::util::indices_arr::<N_MEM_COLS>();
     unsafe { core::mem::transmute::<[usize; N_MEM_COLS], MemCols<usize>>(arr) }
