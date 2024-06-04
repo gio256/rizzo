@@ -172,9 +172,14 @@ impl<F: RichField + Extendable<D>, const D: usize> Stark<F, D> for PackStark<F, 
 #[cfg(test)]
 mod tests {
     use plonky2::plonk::config::{GenericConfig, PoseidonGoldilocksConfig};
+    use plonky2::util::timing::TimingTree;
+    use starky::config::StarkConfig;
+    use starky::prover::prove;
     use starky::stark_testing::{test_stark_circuit_constraints, test_stark_low_degree};
+    use starky::verifier::verify_stark_proof;
 
     use super::PackStark;
+    use crate::pack::trace::{gen_trace, PackOp};
 
     const D: usize = 2;
     type C = PoseidonGoldilocksConfig;
@@ -192,4 +197,38 @@ mod tests {
     //     let stark: S = Default::default();
     //     test_stark_circuit_constraints::<F, C, S, D>(stark).unwrap();
     // }
+
+    #[test]
+    fn test_gen_eval() {
+        crate::util::impl_stark_no_ctls!(PackStark);
+        type S = PackStarkNoCtls<F, D>;
+        const CFG: StarkConfig = StarkConfig::standard_fast_config();
+
+        let stark: S = Default::default();
+        let ops = vec![
+            PackOp {
+                rw: true,
+                adr_virt: 0,
+                time: 1,
+                bytes: vec![0xab, 0xbe, 0xef],
+            },
+            PackOp {
+                rw: false,
+                adr_virt: 0,
+                time: 2,
+                bytes: vec![0xab, 0xbe, 0xef],
+            },
+            PackOp {
+                rw: true,
+                adr_virt: 0,
+                time: 3,
+                bytes: vec![0xbe, 0xef, 0xab, 0xab],
+            },
+        ];
+        let min_rows = CFG.fri_config.num_cap_elements();
+        let trace = gen_trace::<F>(ops, min_rows);
+        let mut t = TimingTree::default();
+        let proof = prove::<F, C, S, D>(stark, &CFG, trace, &[], &mut t).unwrap();
+        verify_stark_proof(stark, proof, &CFG).unwrap();
+    }
 }
