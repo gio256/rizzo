@@ -49,6 +49,10 @@ impl MemAddress {
     pub(crate) fn new(seg: Segment, virt: usize) -> Self {
         Self { seg, virt }
     }
+
+    pub(crate) fn is_reg0(&self) -> bool {
+        self.seg == Segment::Reg && self.virt == 0
+    }
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -66,6 +70,7 @@ impl MemOp {
     }
 
     fn filler(adr: MemAddress, time: usize, val: u32) -> Self {
+        let val = if adr.is_reg0() { 0 } else { val };
         Self {
             on: false,
             time,

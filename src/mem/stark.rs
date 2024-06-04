@@ -87,6 +87,7 @@ fn eval_all<P: PackedField>(lv: &MemCols<P>, nv: &MemCols<P>, cc: &mut Constrain
     cc.constraint_transition(f_read_next * aux * (val_next - val));
 
     // all memory is initialized to 0
+    cc.constraint_first_row(f_read * val);
     cc.constraint_transition(f_read_next * f_adr_diff * val_next);
 
     // register x0 is always 0
