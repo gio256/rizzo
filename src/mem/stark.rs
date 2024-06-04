@@ -186,8 +186,6 @@ impl<F: RichField + Extendable<D>, const D: usize> Stark<F, D> for MemStark<F, D
 
 #[cfg(test)]
 mod tests {
-    use crate::mem::trace::{gen_trace, MemAddress, MemKind, MemOp};
-    use crate::mem::Segment;
     use plonky2::plonk::config::{GenericConfig, PoseidonGoldilocksConfig};
     use plonky2::util::timing::TimingTree;
     use starky::config::StarkConfig;
@@ -196,8 +194,9 @@ mod tests {
     use starky::verifier::verify_stark_proof;
 
     use super::MemStark;
+    use crate::mem::trace::{gen_trace, MemAddress, MemKind, MemOp};
+    use crate::mem::Segment;
 
-    const CFG: StarkConfig = StarkConfig::standard_fast_config();
     const D: usize = 2;
     type C = PoseidonGoldilocksConfig;
     type F = <C as GenericConfig<D>>::F;
@@ -219,6 +218,7 @@ mod tests {
     fn test_gen_eval() {
         crate::util::impl_stark_no_ctls!(MemStark);
         type S = MemStarkNoCtls<F, D>;
+        const CFG: StarkConfig = StarkConfig::standard_fast_config();
 
         let stark: S = Default::default();
         let mut ops = vec![

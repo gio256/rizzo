@@ -18,6 +18,12 @@ pub(crate) struct PackCols<T> {
     pub rc_freq: T,
 }
 
+impl<T: Copy> PackCols<T> {
+    pub(crate) fn to_vec(&self) -> Vec<T> {
+        Borrow::<[T; N_PACK_COLS]>::borrow(self).to_vec()
+    }
+}
+
 const fn make_col_map() -> PackCols<usize> {
     let arr = crate::util::indices_arr::<N_PACK_COLS>();
     unsafe { core::mem::transmute::<[usize; N_PACK_COLS], PackCols<usize>>(arr) }

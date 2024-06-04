@@ -1,15 +1,17 @@
 use core::borrow::Borrow;
-use core::cmp::max;
-use core::iter::once;
+use core::cmp::{max, min};
+use core::iter::{once, repeat, repeat_with};
 use core::marker::PhantomData;
 
 use hashbrown::HashMap;
 use plonky2::field::extension::{Extendable, FieldExtension};
 use plonky2::field::packed::PackedField;
+use plonky2::field::polynomial::PolynomialValues;
 use plonky2::field::types::Field;
 use plonky2::hash::hash_types::RichField;
 use plonky2::iop::ext_target::ExtensionTarget;
 use plonky2::plonk::circuit_builder::CircuitBuilder;
+use plonky2::util::transpose;
 use starky::constraint_consumer::{ConstraintConsumer, RecursiveConstraintConsumer};
 use starky::cross_table_lookup::TableWithColumns;
 use starky::evaluation_frame::{StarkEvaluationFrame, StarkFrame};
@@ -29,54 +31,80 @@ pub(crate) struct PackOp {
     pub bytes: Vec<u8>,
 }
 
-pub(crate) fn gen_trace<F: RichField>(ops: Vec<PackOp>, min_rows: usize) -> Vec<PackCols<F>> {
+impl PackOp {
+    fn into_row<F: Field>(self, map: &mut HashMap<u8, usize>, index: usize) -> PackCols<F> {
+        let mut row = PackCols {
+            f_rw: F::from_bool(self.rw),
+            adr_virt: F::from_canonical_u32(self.adr_virt),
+            time: F::from_canonical_u32(self.time),
+            rc_count: F::from_canonical_usize(min(index, u8::MAX.into())),
+            ..Default::default()
+        };
+
+        let len = self.bytes.len();
+        debug_assert!(len > 0 && len <= N_BYTES);
+        row.len_idx[len - 1] = F::ONE;
+
+        row.bytes = self
+            .bytes
+            .into_iter()
+            .rev()
+            .chain(repeat(0).take(N_BYTES - len))
+            .map(|b| {
+                let freq = map.entry(b).or_insert(0);
+                *freq += 1;
+                F::from_canonical_u8(b)
+            })
+            .collect::<Vec<_>>()
+            .try_into()
+            .unwrap();
+        row
+    }
+}
+
+pub(crate) fn gen_trace<F: RichField>(
+    mut ops: Vec<PackOp>,
+    min_rows: usize,
+) -> Vec<PolynomialValues<F>> {
+    let trace = gen_trace_rows(ops, min_rows);
+    let trace_rows: Vec<_> = trace.iter().map(PackCols::to_vec).collect();
+    let trace_cols = transpose(&trace_rows);
+    trace_cols.into_iter().map(PolynomialValues::new).collect()
+}
+
+fn gen_trace_rows<F: RichField>(
+    mut ops: Vec<PackOp>,
+    min_rows: usize,
+) -> Vec<PackCols<F>> {
     let ops_len = ops.iter().filter(|op| !op.bytes.is_empty()).count();
     let n_rows = max(max(ops_len, u8::MAX.into()), min_rows).next_power_of_two();
-    let mut rows: Vec<PackCols<F>> = vec![Default::default(); n_rows];
 
-    let window = windows_mut::<_, 2>(&mut rows);
-    let mut iter = window.zip_iter(ops.into_iter().filter(|op| !op.bytes.is_empty()));
+    // generate rows from nonempty packing ops
     let mut rc_freq = HashMap::default();
+    let mut rows: Vec<PackCols<F>> = ops
+        .into_iter()
+        .filter(|op| !op.bytes.is_empty())
+        .enumerate()
+        .map(|(i, op)| op.into_row(&mut rc_freq, i))
+        .collect();
 
-    // padding rows are empty
-    while let Some(([lv, nv], op)) = iter.next() {
-        trace(lv, nv, &mut rc_freq, op);
-    }
+    // account for padding rows in range check frequencies
+    let pad_freq = rc_freq.entry(0).or_insert(0);
+    *pad_freq += 4 * n_rows.saturating_sub(rows.len());
 
+    // extend with padding rows
+    rows.extend((rows.len()..n_rows).map(padding_row));
+
+    // write range check frequencies column
     for (val, freq) in rc_freq {
         rows[val as usize].rc_freq = F::from_canonical_usize(freq);
     }
     rows
 }
 
-fn trace<F: RichField>(
-    lv: &mut PackCols<F>,
-    nv: &mut PackCols<F>,
-    map: &mut HashMap<u8, usize>,
-    op: PackOp,
-) {
-    let len = op.bytes.len();
-    debug_assert!(len > 0 && len <= N_BYTES);
-    lv.f_rw = F::from_bool(op.rw);
-    lv.adr_virt = F::from_canonical_u32(op.adr_virt);
-    lv.time = F::from_canonical_u32(op.time);
-    lv.len_idx[len - 1] = F::ONE;
-    lv.bytes = op
-        .bytes
-        .into_iter()
-        .rev()
-        .map(|b| {
-            let freq = map.entry(b).or_insert(0);
-            *freq += 1;
-            F::from_canonical_u8(b)
-        })
-        .collect::<Vec<_>>()
-        .try_into()
-        .unwrap();
-
-    if lv.rc_count.to_canonical_u64() < u8::MAX.into() {
-        nv.rc_count = lv.rc_count + F::ONE;
-    } else {
-        nv.rc_count = F::from_canonical_u8(u8::MAX);
+fn padding_row<F: Field>(index: usize) -> PackCols<F> {
+    PackCols {
+        rc_count: F::from_canonical_usize(min(index, u8::MAX.into())),
+        ..Default::default()
     }
 }
