@@ -9,10 +9,17 @@ use starky::constraint_consumer::{ConstraintConsumer, RecursiveConstraintConsume
 use crate::arith::eval_add_transition;
 use crate::cpu::columns::{CpuCols, CPU_COL_MAP};
 
-const INC_PC_OPS: [usize; 3] = [
+const INC_PC_OPS: [usize; 10] = [
     CPU_COL_MAP.op.f_arith,
+    CPU_COL_MAP.op.f_logic,
     CPU_COL_MAP.op.f_lw,
+    CPU_COL_MAP.op.f_lh,
+    CPU_COL_MAP.op.f_lb,
+    CPU_COL_MAP.op.f_lhu,
+    CPU_COL_MAP.op.f_lbu,
     CPU_COL_MAP.op.f_sw,
+    CPU_COL_MAP.op.f_sh,
+    CPU_COL_MAP.op.f_sb,
 ];
 pub(crate) const INSTRUCTION_BYTES: usize = 4;
 
