@@ -20,9 +20,9 @@ use crate::util::fst;
 use crate::vm::opcode::Opcode;
 
 const ARITH_OPS: [(usize, u8); 3] = [
-    (ARITH_COL_MAP.op.f_add, Opcode::ADD as u8),
-    (ARITH_COL_MAP.op.f_sub, Opcode::SUB as u8),
-    (ARITH_COL_MAP.op.f_ltu, Opcode::SLTU as u8),
+    (ARITH_COL_MAP.op.f_add, Opcode::Add as u8),
+    (ARITH_COL_MAP.op.f_sub, Opcode::Sub as u8),
+    (ARITH_COL_MAP.op.f_ltu, Opcode::Sltu as u8),
 ];
 
 pub(crate) fn ctl_looked<F: Field>() -> TableWithColumns<F> {

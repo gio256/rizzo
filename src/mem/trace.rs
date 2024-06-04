@@ -110,11 +110,9 @@ pub(crate) fn gen_trace_rows<F: RichField>(mut ops: Vec<MemOp>) -> Vec<MemCols<F
     pad(&mut ops);
 
     let mut rc_freq = HashMap::default();
-    let mut rows = ops
-        .into_par_iter()
-        .map(MemOp::into_row::<F>)
-        .collect::<Vec<_>>();
+    let mut rows: Vec<_> = ops.into_par_iter().map(MemOp::into_row::<F>).collect();
     let mut iter = windows_mut::<_, 2>(&mut rows);
+
     while let Some([lv, nv]) = iter.next() {
         trace(lv, Some(nv), &mut rc_freq);
     }

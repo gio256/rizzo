@@ -96,6 +96,8 @@ fn eval_addcy<P: PackedField>(
     // did_cy in {0, 1}
     let did_cy = diff * base_inv;
     cc.constraint(filter * cy * (cy - P::ONES));
+
+    // did_cy matches cy
     if transition {
         cc.constraint_transition(filter * (did_cy - cy));
     } else {
@@ -103,6 +105,7 @@ fn eval_addcy<P: PackedField>(
     }
 }
 
+#[allow(clippy::too_many_arguments)]
 fn eval_addcy_circuit<F: RichField + Extendable<D>, const D: usize>(
     cb: &mut CircuitBuilder<F, D>,
     cc: &mut RecursiveConstraintConsumer<F, D>,
