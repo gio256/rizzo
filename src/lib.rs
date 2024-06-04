@@ -1,5 +1,5 @@
-#![feature(array_windows)]
 #![allow(unused)]
+#![feature(array_windows)]
 
 pub mod arith;
 pub mod cpu;
