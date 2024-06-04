@@ -1,6 +1,6 @@
 use core::borrow::Borrow;
 use core::cmp::{max, min};
-use core::iter::{once, repeat, repeat_with};
+use core::iter::{once, repeat};
 use core::marker::PhantomData;
 
 use hashbrown::HashMap;
@@ -37,10 +37,11 @@ impl PackOp {
             f_rw: F::from_bool(self.rw),
             adr_virt: F::from_canonical_u32(self.adr_virt),
             time: F::from_canonical_u32(self.time),
-            rc_count: F::from_canonical_usize(min(index, u8::MAX.into())),
+            rc_count: rc_count(index),
             ..Default::default()
         };
 
+        // set index at length of bytes
         let len = self.bytes.len();
         debug_assert!(len > 0 && len <= N_BYTES);
         row.len_idx[len - 1] = F::ONE;
@@ -49,7 +50,7 @@ impl PackOp {
             .bytes
             .into_iter()
             .rev()
-            .chain(repeat(0).take(N_BYTES - len))
+            .chain(repeat(0).take(N_BYTES.saturating_sub(len)))
             .map(|b| {
                 let freq = map.entry(b).or_insert(0);
                 *freq += 1;
@@ -72,10 +73,7 @@ pub(crate) fn gen_trace<F: RichField>(
     trace_cols.into_iter().map(PolynomialValues::new).collect()
 }
 
-fn gen_trace_rows<F: RichField>(
-    mut ops: Vec<PackOp>,
-    min_rows: usize,
-) -> Vec<PackCols<F>> {
+fn gen_trace_rows<F: RichField>(mut ops: Vec<PackOp>, min_rows: usize) -> Vec<PackCols<F>> {
     let ops_len = ops.iter().filter(|op| !op.bytes.is_empty()).count();
     let n_rows = max(max(ops_len, u8::MAX.into()), min_rows).next_power_of_two();
 
@@ -90,10 +88,10 @@ fn gen_trace_rows<F: RichField>(
 
     // account for padding rows in range check frequencies
     let pad_freq = rc_freq.entry(0).or_insert(0);
-    *pad_freq += 4 * n_rows.saturating_sub(rows.len());
+    *pad_freq += N_BYTES * n_rows.saturating_sub(ops_len);
 
     // extend with padding rows
-    rows.extend((rows.len()..n_rows).map(padding_row));
+    rows.extend((ops_len..n_rows).map(padding_row));
 
     // write range check frequencies column
     for (val, freq) in rc_freq {
@@ -104,7 +102,11 @@ fn gen_trace_rows<F: RichField>(
 
 fn padding_row<F: Field>(index: usize) -> PackCols<F> {
     PackCols {
-        rc_count: F::from_canonical_usize(min(index, u8::MAX.into())),
+        rc_count: rc_count(index),
         ..Default::default()
     }
+}
+
+fn rc_count<F: Field>(index: usize) -> F {
+    F::from_canonical_usize(min(index, u8::MAX.into()))
 }

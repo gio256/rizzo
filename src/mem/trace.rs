@@ -1,6 +1,6 @@
 use core::borrow::Borrow;
 use core::cmp::max;
-use core::iter::once;
+use core::iter::{once, repeat};
 use core::marker::PhantomData;
 
 use hashbrown::HashMap;
@@ -49,7 +49,6 @@ impl MemAddress {
     pub(crate) fn new(seg: Segment, virt: usize) -> Self {
         Self { seg, virt }
     }
-
     pub(crate) fn is_reg0(&self) -> bool {
         self.seg == Segment::Reg && self.virt == 0
     }
@@ -69,8 +68,10 @@ impl MemOp {
         (self.adr.seg, self.adr.virt, self.time)
     }
 
-    fn filler(adr: MemAddress, time: usize, val: u32) -> Self {
-        let val = if adr.is_reg0() { 0 } else { val };
+    fn filler(adr: MemAddress, time: usize, mut val: u32) -> Self {
+        if adr.is_reg0() {
+            val = 0
+        }
         Self {
             on: false,
             time,
@@ -175,8 +176,8 @@ fn pad(ops: &mut Vec<MemOp>) {
     };
     let len = ops.len();
     let padded_len = len.next_power_of_two();
-    println!("padding from {} to {} rows.", len, padded_len);
-    ops.extend((len..padded_len).map(|_| pad_op));
+    println!("padding memory ops from {} to {} rows.", len, padded_len);
+    ops.extend(repeat(pad_op).take(padded_len - len));
 }
 
 fn fill_rc_gaps(ops: &mut Vec<MemOp>) {
