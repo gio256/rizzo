@@ -76,25 +76,26 @@ impl MemOp {
     }
 
     fn into_row<F: Field>(self) -> MemCols<F> {
-        let mut row = MemCols::default();
-        row.f_on = F::from_bool(self.on);
-        row.f_rw = F::from_bool(self.kind.into());
-        row.time = F::from_canonical_usize(self.time);
-        row.adr_seg = F::from_canonical_usize(self.adr.seg as usize);
-        row.adr_virt = F::from_canonical_usize(self.adr.virt);
-        row.val = F::from_canonical_u32(self.val);
-        row
+        MemCols {
+            f_on: F::from_bool(self.on),
+            f_rw: F::from_bool(self.kind.into()),
+            time: F::from_canonical_usize(self.time),
+            adr_seg: F::from_canonical_usize(self.adr.seg as usize),
+            adr_virt: F::from_canonical_usize(self.adr.virt),
+            val: F::from_canonical_u32(self.val),
+            ..Default::default()
+        }
     }
 }
 
 pub(crate) fn gen_trace<F: RichField>(mut ops: Vec<MemOp>) -> Vec<PolynomialValues<F>> {
-    let trace = gen_trace_cols(ops);
+    let trace = gen_trace_rows(ops);
     let trace_rows: Vec<_> = trace.iter().map(MemCols::to_vec).collect();
     let trace_cols = transpose(&trace_rows);
     trace_cols.into_iter().map(PolynomialValues::new).collect()
 }
 
-pub(crate) fn gen_trace_cols<F: RichField>(mut ops: Vec<MemOp>) -> Vec<MemCols<F>> {
+pub(crate) fn gen_trace_rows<F: RichField>(mut ops: Vec<MemOp>) -> Vec<MemCols<F>> {
     ops.sort_by_key(MemOp::sort_key);
 
     // fill range check gaps, then sort again and add padding rows

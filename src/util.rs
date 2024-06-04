@@ -1,4 +1,4 @@
-/// Returns [0,1,..,N]
+/// Returns [0,1,..,N].
 pub(crate) const fn indices_arr<const N: usize>() -> [usize; N] {
     let mut arr = [0; N];
     let mut i = 0;
@@ -9,10 +9,12 @@ pub(crate) const fn indices_arr<const N: usize>() -> [usize; N] {
     arr
 }
 
+/// Returns the first element of a pair.
 pub(crate) fn fst<A, B>(x: (A, B)) -> A {
     x.0
 }
 
+/// Returns the second element of a pair.
 pub(crate) fn snd<A, B>(x: (A, B)) -> B {
     x.1
 }
