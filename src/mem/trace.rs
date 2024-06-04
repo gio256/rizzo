@@ -192,7 +192,7 @@ fn fill_gap<'a>(lv: &'a MemOp, nv: &'a MemOp, max_rc: usize) -> impl Iterator<It
     if lv.adr.seg != nv.adr.seg {
         let gap = nv.adr.virt / max_rc;
         let res = (1..gap + 1).map(move |i| {
-            let adr = MemAddress::new(lv.adr.seg, lv.adr.virt - max_rc * i);
+            let adr = MemAddress::new(nv.adr.seg, max_rc * i);
             MemOp::filler(adr, 0, 0)
         });
         res_a = Some(res);
