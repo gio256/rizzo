@@ -16,7 +16,7 @@ pub(crate) fn eval<P: PackedField>(
         cc.constraint(chan.f_on * (chan.f_on - P::ONES));
         cc.constraint(chan.f_rw * (chan.f_rw - P::ONES));
         // adr_seg must be either 0 (register) or 1 (main memory)
-        // cc.constraint(chan.adr_seg * (chan.adr_seg - P::ONES));
+        cc.constraint(chan.adr_seg * (chan.adr_seg - P::ONES));
     }
 }
 
