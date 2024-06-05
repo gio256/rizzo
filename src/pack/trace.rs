@@ -26,6 +26,7 @@ use crate::stark::Table;
 #[derive(Clone, Debug)]
 pub(crate) struct PackOp {
     pub rw: bool,
+    pub signed: bool,
     pub adr_virt: u32,
     pub time: u32,
     pub bytes: Vec<u8>,
@@ -35,6 +36,7 @@ impl PackOp {
     fn into_row<F: Field>(self, map: &mut HashMap<u8, usize>, index: usize) -> PackCols<F> {
         let mut row = PackCols {
             f_rw: F::from_bool(self.rw),
+            f_signed: F::from_bool(self.signed),
             adr_virt: F::from_canonical_u32(self.adr_virt),
             time: F::from_canonical_u32(self.time),
             range_check: RangeCheck {
@@ -49,11 +51,27 @@ impl PackOp {
         debug_assert!(len > 0 && len <= N_BYTES);
         row.len_idx[len - 1] = F::ONE;
 
+        let high_byte = self.bytes[0];
+        let sign_bit = high_byte >> 7;
+
+        // determine whether extension bits should be set or unset
+        let sign_ext = self.signed && (sign_bit != 0);
+        let ext_byte = if sign_ext { u8::MAX } else { 0 };
+        row.f_sign_ext = F::from_bool(sign_ext);
+
+        // deconstruct the most significant byte
+        row.high_bits = (0..8)
+            .map(|i| F::from_bool(high_byte & (1 << i) != 0))
+            .collect::<Vec<_>>()
+            .try_into()
+            .unwrap();
+
+        // write (maybe sign extended) LE bytes to row
         row.bytes = self
             .bytes
             .into_iter()
             .rev()
-            .chain(repeat(0).take(N_BYTES.saturating_sub(len)))
+            .chain(repeat(ext_byte).take(N_BYTES.saturating_sub(len)))
             .map(|b| {
                 let freq = map.entry(b).or_insert(0);
                 *freq += 1;
