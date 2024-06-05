@@ -6,6 +6,16 @@ use crate::pack::N_BYTES;
 pub(crate) const N_PACK_COLS: usize = core::mem::size_of::<PackCols<u8>>();
 pub(crate) const PACK_COL_MAP: PackCols<usize> = make_col_map();
 
+/// Range checking columns.
+#[repr(C)]
+#[derive(Clone, Debug, Default)]
+pub(crate) struct RangeCheck<T> {
+    /// The range check counter.
+    pub count: T,
+    /// The range check frequency.
+    pub freq: T,
+}
+
 #[repr(C)]
 #[derive(Clone, Debug, Default)]
 pub(crate) struct PackCols<T> {
@@ -14,8 +24,7 @@ pub(crate) struct PackCols<T> {
     pub time: T,
     pub len_idx: [T; N_BYTES],
     pub bytes: [T; N_BYTES],
-    pub rc_count: T,
-    pub rc_freq: T,
+    pub range_check: RangeCheck<T>,
 }
 
 impl<T: Copy> PackCols<T> {
