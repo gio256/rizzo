@@ -24,7 +24,7 @@ pub(crate) struct PackCols<T> {
     /// 1 if this is a write operation, 0 for a read operation.
     pub f_rw: T,
     /// 1 if `bytes` should be interpreted as signed (lb or lh).
-    pub f_signed: T, //TODO: add to ctl_looked
+    pub f_signed: T,
     /// 1 if `bytes` should be sign extended and the sign bit is 1.
     pub f_sign_ext: T,
     /// The starting virtual address of the memory operation.
