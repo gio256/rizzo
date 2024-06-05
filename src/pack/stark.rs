@@ -14,6 +14,7 @@ use starky::evaluation_frame::{StarkEvaluationFrame, StarkFrame};
 use starky::lookup::{Column, Filter, Lookup};
 use starky::stark::Stark;
 
+use crate::arith::addcy::eval_sub;
 use crate::pack::columns::{PackCols, N_PACK_COLS, PACK_COL_MAP};
 use crate::pack::N_BYTES;
 use crate::stark::Table;
@@ -26,13 +27,7 @@ pub(crate) fn ctl_looked<F: Field>() -> TableWithColumns<F> {
         .map(|(i, col)| (col, F::from_canonical_usize(i + 1)));
     let len = Column::linear_combination(len_comb);
 
-    let packed_comb = PACK_COL_MAP
-        .bytes
-        .into_iter()
-        .enumerate()
-        .map(|(i, col)| (col, F::from_canonical_u64(1 << (8 * i))));
-    let packed = Column::linear_combination(packed_comb);
-
+    let packed = Column::le_bytes(PACK_COL_MAP.bytes);
     let f_rw = Column::single(PACK_COL_MAP.f_rw);
     let adr_virt = Column::single(PACK_COL_MAP.adr_virt);
     let time = Column::single(PACK_COL_MAP.time);
@@ -72,18 +67,49 @@ fn eval_all<P: PackedField>(lv: &PackCols<P>, nv: &PackCols<P>, cc: &mut Constra
     cc.constraint_first_row(filter - P::ONES);
 
     // len_idx values in {0, 1}
-    for idx in lv.len_idx {
+    let len_idx = lv.len_idx;
+    for idx in len_idx {
         cc.constraint(idx * (idx - P::ONES));
     }
 
     // f_rw in {0, 1}
     let f_rw = lv.f_rw;
+    let f_read = P::ONES - f_rw;
     cc.constraint(f_rw * (f_rw - P::ONES));
 
-    // all bytes beyond the length must be 0
-    for (i, idx) in lv.len_idx.into_iter().enumerate() {
+    // sign flags in {0, 1}
+    let f_signed = lv.f_signed;
+    let f_sign_ext = lv.f_sign_ext;
+    let f_zero_ext = P::ONES - f_sign_ext;
+    cc.constraint(f_signed * (f_signed - P::ONES));
+    cc.constraint(f_sign_ext * (f_sign_ext - P::ONES));
+
+    // high bits are all in {0, 1}
+    let high_bits = lv.high_bits;
+    for bit in high_bits {
+        cc.constraint(bit * (bit - P::ONES));
+    }
+
+    // if f_signed, extend with the most significant bit
+    let sign_bit = *high_bits.last().unwrap();
+    cc.constraint(f_sign_ext - (f_signed * sign_bit));
+
+    // high_bits reconstructs the most significant byte
+    let high_byte: P = high_bits
+        .into_iter()
+        .zip(P::Scalar::TWO.powers())
+        .map(|(bit, base)| bit * base)
+        .sum();
+
+    let ff = P::Scalar::from_canonical_u8(0xff);
+    for (i, idx) in len_idx.into_iter().enumerate() {
+        // match high_byte with the most significant byte
+        cc.constraint(idx * (high_byte - lv.bytes[i]));
+
+        // all bytes beyond the length are 0 if zero extending or 0xff if sign extending
         for &byte in &lv.bytes[i + 1..] {
-            cc.constraint(idx * byte);
+            cc.constraint(f_zero_ext * idx * byte);
+            cc.constraint(f_sign_ext * idx * (ff - byte));
         }
     }
 
