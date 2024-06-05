@@ -104,8 +104,13 @@ pub(crate) fn ctl_looking_pack<F: Field>() -> TableWithColumns<F> {
         (CPU_COL_MAP.op.f_lhu, F::from_canonical_usize(N_BYTES_HALF)),
         (CPU_COL_MAP.op.f_lw, F::from_canonical_usize(N_BYTES)),
     ];
+    let signed_ops = [
+        (CPU_COL_MAP.op.f_lb, F::ONE),
+        (CPU_COL_MAP.op.f_lh, F::ONE),
+    ];
 
     let f_rw = Column::constant(F::ZERO);
+    let f_signed = Column::linear_combination(signed_ops);
     // rs1 + imm is stored in rs2_channel.adr_virt
     let adr_virt = Column::single(CPU_COL_MAP.rs2_channel().adr_virt);
     let len = Column::linear_combination(load_ops);
@@ -113,7 +118,7 @@ pub(crate) fn ctl_looking_pack<F: Field>() -> TableWithColumns<F> {
     let time = Column::linear_combination([(CPU_COL_MAP.clock, n_channels)]);
     let val = Column::single(CPU_COL_MAP.rd_channel().val);
 
-    let cols = vec![f_rw, adr_virt, len, val, time];
+    let cols = vec![f_rw, f_signed, adr_virt, len, val, time];
     let filter = Filter::new_simple(Column::sum(load_ops.map(fst)));
     TableWithColumns::new(Table::Cpu as usize, cols, filter)
 }
@@ -126,13 +131,14 @@ pub(crate) fn ctl_looking_unpack<F: Field>() -> TableWithColumns<F> {
     ];
 
     let f_rw = Column::constant(F::ONE);
+    let f_signed = Column::constant(F::ZERO);
     let adr_virt = Column::single(CPU_COL_MAP.rd_channel().adr_virt);
     let len = Column::linear_combination(store_ops);
     let n_channels = F::from_canonical_usize(N_MEM_CHANNELS);
     let time = Column::linear_combination([(CPU_COL_MAP.clock, n_channels)]);
     let val = Column::single(CPU_COL_MAP.rs2_channel().val);
 
-    let cols = vec![f_rw, adr_virt, len, val, time];
+    let cols = vec![f_rw, f_signed, adr_virt, len, val, time];
     let filter = Filter::new_simple(Column::sum(store_ops.map(fst)));
     TableWithColumns::new(Table::Cpu as usize, cols, filter)
 }

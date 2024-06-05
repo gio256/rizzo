@@ -27,12 +27,13 @@ pub(crate) fn ctl_looked<F: Field>() -> TableWithColumns<F> {
         .map(|(i, col)| (col, F::from_canonical_usize(i + 1)));
     let len = Column::linear_combination(len_comb);
 
-    let packed = Column::le_bytes(PACK_COL_MAP.bytes);
     let f_rw = Column::single(PACK_COL_MAP.f_rw);
+    let f_signed = Column::single(PACK_COL_MAP.f_signed);
     let adr_virt = Column::single(PACK_COL_MAP.adr_virt);
+    let packed = Column::le_bytes(PACK_COL_MAP.bytes);
     let time = Column::single(PACK_COL_MAP.time);
 
-    let cols = vec![f_rw, adr_virt, len, packed, time];
+    let cols = vec![f_rw, f_signed, adr_virt, len, packed, time];
     let filter = Filter::new_simple(Column::sum(PACK_COL_MAP.len_idx));
     TableWithColumns::new(Table::Pack as usize, cols, filter)
 }
