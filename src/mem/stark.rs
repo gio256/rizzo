@@ -78,7 +78,7 @@ fn eval_all<P: PackedField>(lv: &MemCols<P>, nv: &MemCols<P>, cc: &mut Constrain
     let range_check = f_seg_diff * (adr_seg_next - adr_seg - P::ONES)
         + f_virt_diff * (adr_virt_next - adr_virt - P::ONES)
         + f_adr_same * (nv.time - lv.time);
-    cc.constraint_transition(lv.rc - range_check);
+    cc.constraint_transition(lv.range_check.val - range_check);
 
     // reads keep the same value as the current row, except for register x0
     // f_read_next * f_adr_same * f_not_reg0 * (val_next - val);
@@ -95,9 +95,9 @@ fn eval_all<P: PackedField>(lv: &MemCols<P>, nv: &MemCols<P>, cc: &mut Constrain
     cc.constraint(f_reg0 * adr_virt);
     cc.constraint(f_read * f_reg0 * val);
 
-    // rc_count starts at 0 and increments by 1
-    cc.constraint_first_row(lv.rc_count);
-    cc.constraint_transition(nv.rc_count - lv.rc_count - P::ONES);
+    // range check counter starts at 0 and increments by 1
+    cc.constraint_first_row(lv.range_check.count);
+    cc.constraint_transition(nv.range_check.count - lv.range_check.count - P::ONES);
 }
 
 fn eval_all_circuit<F: RichField + Extendable<D>, const D: usize>(
@@ -168,11 +168,11 @@ impl<F: RichField + Extendable<D>, const D: usize> Stark<F, D> for MemStark<F, D
     fn lookups(&self) -> Vec<Lookup<F>> {
         vec![Lookup {
             columns: vec![
-                Column::single(MEM_COL_MAP.rc),
+                Column::single(MEM_COL_MAP.range_check.val),
                 Column::single_next_row(MEM_COL_MAP.adr_virt),
             ],
-            table_column: Column::single(MEM_COL_MAP.rc_count),
-            frequencies_column: Column::single(MEM_COL_MAP.rc_freq),
+            table_column: Column::single(MEM_COL_MAP.range_check.count),
+            frequencies_column: Column::single(MEM_COL_MAP.range_check.freq),
             filter_columns: vec![
                 Default::default(),
                 Filter::new_simple(Column::single(MEM_COL_MAP.f_seg_diff)),

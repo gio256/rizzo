@@ -120,7 +120,7 @@ pub(crate) fn gen_trace_rows<F: RichField>(mut ops: Vec<MemOp>) -> Vec<MemCols<F
 
     for (val, freq) in rc_freq {
         let idx: usize = val.to_canonical_u64().try_into().unwrap();
-        rows[idx].rc_freq = F::from_canonical_usize(freq);
+        rows[idx].range_check.freq = F::from_canonical_usize(freq);
     }
     rows
 }
@@ -144,7 +144,7 @@ fn trace<F: RichField>(
         lv.aux = F::from_bool(aux);
 
         // range check
-        lv.rc = if seg_diff {
+        lv.range_check.val = if seg_diff {
             nv.adr_seg - lv.adr_seg - F::ONE
         } else if virt_diff {
             nv.adr_virt - lv.adr_virt - F::ONE
@@ -152,8 +152,8 @@ fn trace<F: RichField>(
             nv.time - lv.time
         };
 
-        // increment rc_count column
-        nv.rc_count = lv.rc_count + F::ONE;
+        // increment range check count column
+        nv.range_check.count = lv.range_check.count + F::ONE;
 
         if seg_diff {
             let freq = map.entry(nv.adr_virt).or_insert(0);
@@ -161,7 +161,7 @@ fn trace<F: RichField>(
         }
     }
 
-    let freq = map.entry(lv.rc).or_insert(0);
+    let freq = map.entry(lv.range_check.val).or_insert(0);
     *freq += 1;
 }
 

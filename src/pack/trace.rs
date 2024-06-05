@@ -19,7 +19,7 @@ use starky::lookup::{Column, Filter, Lookup};
 use starky::stark::Stark;
 
 use crate::iter::{windows_mut, LendIter};
-use crate::pack::columns::{PackCols, N_PACK_COLS, PACK_COL_MAP};
+use crate::pack::columns::{PackCols, RangeCheck, N_PACK_COLS, PACK_COL_MAP};
 use crate::pack::N_BYTES;
 use crate::stark::Table;
 
@@ -37,7 +37,10 @@ impl PackOp {
             f_rw: F::from_bool(self.rw),
             adr_virt: F::from_canonical_u32(self.adr_virt),
             time: F::from_canonical_u32(self.time),
-            rc_count: rc_count(index),
+            range_check: RangeCheck {
+                count: rc_count(index),
+                ..Default::default()
+            },
             ..Default::default()
         };
 
@@ -95,14 +98,17 @@ fn gen_trace_rows<F: RichField>(mut ops: Vec<PackOp>, min_rows: usize) -> Vec<Pa
 
     // write range check frequencies column
     for (val, freq) in rc_freq {
-        rows[val as usize].rc_freq = F::from_canonical_usize(freq);
+        rows[val as usize].range_check.freq = F::from_canonical_usize(freq);
     }
     rows
 }
 
 fn padding_row<F: Field>(index: usize) -> PackCols<F> {
     PackCols {
-        rc_count: rc_count(index),
+        range_check: RangeCheck {
+            count: rc_count(index),
+            ..Default::default()
+        },
         ..Default::default()
     }
 }

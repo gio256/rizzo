@@ -1,6 +1,18 @@
 use core::borrow::{Borrow, BorrowMut};
 use core::ops::{Deref, DerefMut, Index, IndexMut};
 
+/// Range checking columns.
+#[repr(C)]
+#[derive(Clone, Debug, Default)]
+pub(crate) struct RangeCheck<T> {
+    /// The value to range check.
+    pub val: T,
+    /// The range check counter.
+    pub count: T,
+    /// The range check frequency.
+    pub freq: T,
+}
+
 pub(crate) const N_MEM_COLS: usize = core::mem::size_of::<MemCols<u8>>();
 pub(crate) const MEM_COL_MAP: MemCols<usize> = make_col_map();
 
@@ -27,9 +39,8 @@ pub(crate) struct MemCols<T> {
     pub f_seg_diff: T,
     /// 1 if adr_virt differs in the next row and adr_seg does not, 0 otherwise
     pub f_virt_diff: T,
-    pub rc: T,
-    pub rc_count: T,
-    pub rc_freq: T,
+    /// Range check columns.
+    pub range_check: RangeCheck<T>,
 }
 
 impl<T: Copy> MemCols<T> {

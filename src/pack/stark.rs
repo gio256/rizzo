@@ -92,8 +92,8 @@ fn eval_all<P: PackedField>(lv: &PackCols<P>, nv: &PackCols<P>, cc: &mut Constra
     cc.constraint_transition(filter_next * (filter_next - filter));
 
     // range check
-    let count = lv.rc_count;
-    let count_next = nv.rc_count;
+    let count = lv.range_check.count;
+    let count_next = nv.range_check.count;
     let delta = count_next - count;
     cc.constraint_first_row(count);
     cc.constraint_transition(delta * (delta - P::ONES));
@@ -158,8 +158,8 @@ impl<F: RichField + Extendable<D>, const D: usize> Stark<F, D> for PackStark<F, 
     fn lookups(&self) -> Vec<Lookup<F>> {
         vec![Lookup {
             columns: Column::singles(PACK_COL_MAP.bytes).collect(),
-            table_column: Column::single(PACK_COL_MAP.rc_count),
-            frequencies_column: Column::single(PACK_COL_MAP.rc_freq),
+            table_column: Column::single(PACK_COL_MAP.range_check.count),
+            frequencies_column: Column::single(PACK_COL_MAP.range_check.freq),
             filter_columns: vec![Default::default(); N_BYTES],
         }]
     }
