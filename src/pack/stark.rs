@@ -102,7 +102,7 @@ fn eval_all<P: PackedField>(lv: &PackCols<P>, nv: &PackCols<P>, cc: &mut Constra
         .map(|(bit, base)| bit * base)
         .sum();
 
-    let ff = P::Scalar::from_canonical_u8(0xff);
+    let ff = P::Scalar::from_canonical_u8(u8::MAX);
     for (i, idx) in len_idx.into_iter().enumerate() {
         // match high_byte with the most significant byte
         cc.constraint(idx * (high_byte - lv.bytes[i]));
@@ -235,19 +235,22 @@ mod tests {
         let ops = vec![
             PackOp {
                 rw: true,
-                adr_virt: 0,
+                signed: false,
+                adr_virt: 20,
                 time: 1,
                 bytes: vec![0xab, 0xbe, 0xef],
             },
             PackOp {
                 rw: false,
-                adr_virt: 0,
+                signed: true,
+                adr_virt: 50,
                 time: 2,
                 bytes: vec![0xab, 0xbe, 0xef],
             },
             PackOp {
                 rw: true,
-                adr_virt: 0,
+                signed: false,
+                adr_virt: 100,
                 time: 3,
                 bytes: vec![0xbe, 0xef, 0xab, 0xab],
             },
