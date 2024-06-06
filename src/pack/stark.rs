@@ -75,7 +75,6 @@ fn eval_all<P: PackedField>(lv: &PackCols<P>, nv: &PackCols<P>, cc: &mut Constra
 
     // f_rw in {0, 1}
     let f_rw = lv.f_rw;
-    let f_read = P::ONES - f_rw;
     cc.constraint(f_rw * (f_rw - P::ONES));
 
     // sign flags in {0, 1}
@@ -95,7 +94,7 @@ fn eval_all<P: PackedField>(lv: &PackCols<P>, nv: &PackCols<P>, cc: &mut Constra
     let sign_bit = *high_bits.last().unwrap();
     cc.constraint(f_sign_ext - (f_signed * sign_bit));
 
-    // high_bits reconstructs the most significant byte
+    // high_bits should reconstruct the most significant byte
     let high_byte: P = high_bits
         .into_iter()
         .zip(P::Scalar::TWO.powers())

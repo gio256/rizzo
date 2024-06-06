@@ -19,6 +19,7 @@ use crate::stark::Table;
 use crate::util::fst;
 use crate::vm::opcode::Opcode;
 
+/// Operation flags and the corresponding opcode.
 const ARITH_OPS: [(usize, u8); 3] = [
     (ARITH_COL_MAP.op.f_add, Opcode::Add as u8),
     (ARITH_COL_MAP.op.f_sub, Opcode::Sub as u8),

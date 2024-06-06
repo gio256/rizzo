@@ -14,7 +14,7 @@ use starky::lookup::{Column, Filter, Lookup};
 use starky::stark::Stark;
 
 use crate::cpu::columns::{CpuCols, CPU_COL_MAP, N_CPU_COLS, N_MEM_CHANNELS};
-use crate::cpu::{arith, branch, clock, control_flow, decode, flags, jump, membus, memio, reg};
+use crate::cpu::{arith, branch, clock, control_flow, flags, jump, membus, memio, reg};
 use crate::pack::{N_BYTES, N_BYTES_HALF};
 use crate::stark::Table;
 use crate::util::fst;
@@ -145,7 +145,6 @@ fn eval_all<P: PackedField>(lv: &CpuCols<P>, nv: &CpuCols<P>, cc: &mut Constrain
     control_flow::eval(lv, nv, cc);
     membus::eval(lv, nv, cc);
     memio::eval(lv, nv, cc);
-    decode::eval(lv, nv, cc);
     jump::eval(lv, nv, cc);
     branch::eval(lv, nv, cc);
     flags::eval(lv, nv, cc);
@@ -163,7 +162,6 @@ fn eval_all_circuit<F: RichField + Extendable<D>, const D: usize>(
     control_flow::eval_circuit(cb, lv, nv, cc);
     membus::eval_circuit(cb, lv, nv, cc);
     memio::eval_circuit(cb, lv, nv, cc);
-    decode::eval_circuit(cb, lv, nv, cc);
     jump::eval_circuit(cb, lv, nv, cc);
     branch::eval_circuit(cb, lv, nv, cc);
     flags::eval_circuit(cb, lv, nv, cc);
