@@ -51,6 +51,7 @@ impl PackOp {
         debug_assert!(len > 0 && len <= N_BYTES);
         row.len_idx[len - 1] = F::ONE;
 
+        // self.bytes is big-endian
         let high_byte = self.bytes[0];
         let sign_bit = high_byte >> 7;
 
@@ -66,7 +67,7 @@ impl PackOp {
             .try_into()
             .unwrap();
 
-        // write (maybe sign extended) LE bytes to row
+        // write (maybe sign extended) little-endian bytes to row
         row.bytes = self
             .bytes
             .into_iter()

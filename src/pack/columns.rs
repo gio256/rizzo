@@ -3,9 +3,10 @@ use core::ops::{Deref, DerefMut, Index, IndexMut};
 
 use crate::pack::N_BYTES;
 
-const N_BITS: usize = 8;
-pub(crate) const N_PACK_COLS: usize = core::mem::size_of::<PackCols<u8>>();
+/// The value of each field is the index of the respective column.
 pub(crate) const PACK_COL_MAP: PackCols<usize> = make_col_map();
+pub(crate) const N_PACK_COLS: usize = core::mem::size_of::<PackCols<u8>>();
+const N_BITS: usize = 8;
 
 /// Range checking columns.
 #[repr(C)]
@@ -51,26 +52,31 @@ const fn make_col_map() -> PackCols<usize> {
     let arr = crate::util::indices_arr::<N_PACK_COLS>();
     unsafe { core::mem::transmute::<[usize; N_PACK_COLS], PackCols<usize>>(arr) }
 }
+
 impl<T: Copy> Borrow<PackCols<T>> for [T; N_PACK_COLS] {
     fn borrow(&self) -> &PackCols<T> {
         unsafe { core::mem::transmute(self) }
     }
 }
+
 impl<T: Copy> BorrowMut<PackCols<T>> for [T; N_PACK_COLS] {
     fn borrow_mut(&mut self) -> &mut PackCols<T> {
         unsafe { core::mem::transmute(self) }
     }
 }
+
 impl<T: Copy> Borrow<[T; N_PACK_COLS]> for PackCols<T> {
     fn borrow(&self) -> &[T; N_PACK_COLS] {
         unsafe { core::mem::transmute(self) }
     }
 }
+
 impl<T: Copy> BorrowMut<[T; N_PACK_COLS]> for PackCols<T> {
     fn borrow_mut(&mut self) -> &mut [T; N_PACK_COLS] {
         unsafe { core::mem::transmute(self) }
     }
 }
+
 impl<T: Copy, I> Index<I> for PackCols<T>
 where
     [T]: Index<I>,
@@ -81,6 +87,7 @@ where
         <[T] as Index<I>>::index(arr, i)
     }
 }
+
 impl<T: Copy, I> IndexMut<I> for PackCols<T>
 where
     [T]: IndexMut<I>,
@@ -97,6 +104,7 @@ impl<T: Copy> Deref for PackCols<T> {
         unsafe { core::mem::transmute(self) }
     }
 }
+
 impl<T: Copy> DerefMut for PackCols<T> {
     fn deref_mut(&mut self) -> &mut Self::Target {
         unsafe { core::mem::transmute(self) }

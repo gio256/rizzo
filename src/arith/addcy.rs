@@ -1,3 +1,10 @@
+//! Constraints for ADD, SUB, and SLTU.
+//!
+//! Essentially [zk_evm]'s "add with carry out" implementation, except that we
+//! only have one limb to deal with.
+//!
+//! [zk_evm]: https://github.com/0xPolygonZero/zk_evm/blob/develop/evm_arithmetization/src/arithmetic/addcy.rs
+
 use plonky2::field::extension::{Extendable, FieldExtension};
 use plonky2::field::packed::PackedField;
 use plonky2::field::types::{Field, PrimeField64};
@@ -71,7 +78,7 @@ pub(crate) fn eval_circuit<F: RichField + Extendable<D>, const D: usize>(
     let aux = lv.aux;
 }
 
-/// Constrains x + y == z + cy * 2^32
+/// Constrains `x + y == z + cy*2^32` if `filter != 0`.
 fn eval_addcy<P: PackedField>(
     cc: &mut ConstraintConsumer<P>,
     filter: P,
@@ -105,6 +112,7 @@ fn eval_addcy<P: PackedField>(
     }
 }
 
+/// Constrains `x + y == z + cy*2^32` if `filter != 0`.
 #[allow(clippy::too_many_arguments)]
 fn eval_addcy_circuit<F: RichField + Extendable<D>, const D: usize>(
     cb: &mut CircuitBuilder<F, D>,
@@ -121,6 +129,7 @@ fn eval_addcy_circuit<F: RichField + Extendable<D>, const D: usize>(
     //TODO
 }
 
+/// `left + right == out`
 pub(crate) fn eval_add<P: PackedField>(
     cc: &mut ConstraintConsumer<P>,
     filter: P,
@@ -133,6 +142,7 @@ pub(crate) fn eval_add<P: PackedField>(
     eval_addcy(cc, filter, left, right, out, overflow, false)
 }
 
+/// `left + right == out`
 pub(crate) fn eval_add_transition<P: PackedField>(
     cc: &mut ConstraintConsumer<P>,
     filter: P,
@@ -145,6 +155,7 @@ pub(crate) fn eval_add_transition<P: PackedField>(
     eval_addcy(cc, filter, left, right, out, overflow, true)
 }
 
+/// `left - right == out`
 pub(crate) fn eval_sub<P: PackedField>(
     cc: &mut ConstraintConsumer<P>,
     filter: P,
@@ -157,6 +168,7 @@ pub(crate) fn eval_sub<P: PackedField>(
     eval_addcy(cc, filter, right, out, left, overflow, false)
 }
 
+/// `left <u right == out` (unsigned).
 pub(crate) fn eval_ltu<P: PackedField>(
     cc: &mut ConstraintConsumer<P>,
     filter: P,
@@ -169,6 +181,7 @@ pub(crate) fn eval_ltu<P: PackedField>(
     eval_addcy(cc, filter, right, diff, left, out, false)
 }
 
+/// `left >u right == out` (unsigned).
 pub(crate) fn eval_gtu<P: PackedField>(
     cc: &mut ConstraintConsumer<P>,
     filter: P,
@@ -177,7 +190,7 @@ pub(crate) fn eval_gtu<P: PackedField>(
     out: P,
     diff: P,
 ) {
-    // constrain right + diff == left + out * 2^32
+    // constrain left + diff == right + out * 2^32
     eval_addcy(cc, filter, left, diff, right, out, false)
 }
 

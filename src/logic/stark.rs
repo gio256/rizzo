@@ -18,6 +18,7 @@ use crate::stark::Table;
 use crate::util::fst;
 use crate::vm::opcode::Opcode;
 
+/// Operation flags and the corresponding opcode.
 const LOGIC_OPS: [(usize, u8); 3] = [
     (LOGIC_COL_MAP.op.f_and, Opcode::And as u8),
     (LOGIC_COL_MAP.op.f_xor, Opcode::Xor as u8),
