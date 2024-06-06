@@ -104,10 +104,10 @@ pub(crate) fn ctl_looking_pack<F: Field>() -> TableWithColumns<F> {
         (CPU_COL_MAP.op.f_lhu, F::from_canonical_usize(N_BYTES_HALF)),
         (CPU_COL_MAP.op.f_lw, F::from_canonical_usize(N_BYTES)),
     ];
-    let signed_ops = [(CPU_COL_MAP.op.f_lb, F::ONE), (CPU_COL_MAP.op.f_lh, F::ONE)];
+    let signed_ops = [CPU_COL_MAP.op.f_lb, CPU_COL_MAP.op.f_lh];
 
     let f_rw = Column::constant(F::ZERO);
-    let f_signed = Column::linear_combination(signed_ops);
+    let f_signed = Column::sum(signed_ops);
     // rs1 + imm is stored in rs2_channel.adr_virt
     let adr_virt = Column::single(CPU_COL_MAP.rs2_channel().adr_virt);
     let len = Column::linear_combination(load_ops);

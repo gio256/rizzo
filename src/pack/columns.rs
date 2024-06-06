@@ -28,7 +28,7 @@ pub(crate) struct PackCols<T> {
     pub f_signed: T,
     /// 1 if `bytes` should be sign extended and the sign bit is 1.
     pub f_sign_ext: T,
-    /// The starting virtual address of the memory operation.
+    /// The starting virtual address. Segment is always main memory.
     pub adr_virt: T,
     /// The timestamp of the memory operation.
     pub time: T,

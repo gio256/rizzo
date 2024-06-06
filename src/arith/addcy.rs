@@ -1,7 +1,7 @@
 //! Constraints for ADD, SUB, and SLTU.
 //!
-//! Essentially [zk_evm]'s "add with carry out" implementation, except that we
-//! only have one limb to deal with.
+//! This is essentially [zk_evm]'s "add with carry out" implementation, except
+//! that we only have one limb to deal with.
 //!
 //! [zk_evm]: https://github.com/0xPolygonZero/zk_evm/blob/develop/evm_arithmetization/src/arithmetic/addcy.rs
 

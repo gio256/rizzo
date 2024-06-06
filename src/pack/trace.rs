@@ -72,7 +72,8 @@ impl PackOp {
             .bytes
             .into_iter()
             .rev()
-            .chain(repeat(ext_byte).take(N_BYTES.saturating_sub(len)))
+            .chain(repeat(ext_byte))
+            .take(N_BYTES)
             .map(|b| {
                 let freq = map.entry(b).or_insert(0);
                 *freq += 1;

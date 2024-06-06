@@ -85,6 +85,7 @@ impl MemOp {
         MemCols {
             f_on: F::from_bool(self.on),
             f_rw: F::from_bool(self.kind.into()),
+            f_reg0: F::from_bool(self.adr.is_reg0()),
             time: F::from_canonical_usize(self.time),
             adr_seg: F::from_canonical_usize(self.adr.seg as usize),
             adr_virt: F::from_canonical_usize(self.adr.virt),
@@ -102,9 +103,7 @@ pub(crate) fn gen_trace<F: RichField>(mut ops: Vec<MemOp>) -> Vec<PolynomialValu
 }
 
 pub(crate) fn gen_trace_rows<F: RichField>(mut ops: Vec<MemOp>) -> Vec<MemCols<F>> {
-    ops.sort_by_key(MemOp::sort_key);
-
-    // fill range check gaps, then sort again and add padding rows
+    // fill range check gaps, then re-sort and add padding rows
     fill_rc_gaps(&mut ops);
     ops.sort_by_key(MemOp::sort_key);
     pad(&mut ops);
@@ -130,9 +129,6 @@ fn trace<F: RichField>(
     nv: Option<&mut MemCols<F>>,
     map: &mut HashMap<F, usize>,
 ) {
-    let reg0 = lv.adr_seg == F::ZERO && lv.adr_virt == F::ZERO;
-    lv.f_reg0 = F::from_bool(reg0);
-
     if let Some(nv) = nv {
         let seg_diff = lv.adr_seg != nv.adr_seg;
         let virt_diff = lv.adr_virt != nv.adr_virt && !seg_diff;
@@ -140,6 +136,7 @@ fn trace<F: RichField>(
         lv.f_seg_diff = F::from_bool(seg_diff);
         lv.f_virt_diff = F::from_bool(virt_diff);
 
+        let reg0 = lv.f_reg0 == F::ONE;
         let aux = !(seg_diff || virt_diff || reg0);
         lv.aux = F::from_bool(aux);
 
@@ -178,7 +175,10 @@ fn pad(ops: &mut Vec<MemOp>) {
     ops.extend(repeat(pad_op).take(padded_len - len));
 }
 
+/// Adds dummy memory reads to bridge any gaps between memory ops that are
+/// larger than the maximum range check. Sorts `ops` before filling any gaps.
 fn fill_rc_gaps(ops: &mut Vec<MemOp>) {
+    ops.sort_by_key(MemOp::sort_key);
     let max_rc = ops.len().next_power_of_two() - 1;
     let fill_ops = ops
         .array_windows::<2>()
