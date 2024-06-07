@@ -6,6 +6,10 @@ Powered by starky and [plonky2](https://github.com/0xPolygonZero/plonky2), Rizzo
 
 Rizzo is in the very early stages of development.
 
+## Usage
+
+Building currently requires the `nightly` Rust toolchain.
+
 ## License
 
 Licensed under either of
