@@ -26,15 +26,10 @@ fn eval_load<P: PackedField>(lv: &CpuCols<P>, nv: &CpuCols<P>, cc: &mut Constrai
     cc.constraint(f_load * ch_rd.adr_seg);
     cc.constraint(f_load * (lv.rd - ch_rd.adr_virt));
 
-    //TODO
-    // use rs2 channel to load from memory
-    let ch_load = lv.rs2_channel();
-    cc.constraint(f_load * ch_load.f_on);
-    // cc.constraint(f_load * (P::ONES - ch_load.f_on));
-    // cc.constraint(f_load * ch_load.f_rw);
-    // cc.constraint(f_load * (P::ONES - ch_load.adr_seg));
-    // cc.constraint(f_load * (ch_rd.val - ch_load.val));
-    eval_add(cc, f_load, ch_rs1.val, lv.imm, ch_load.adr_virt, lv.f_aux1);
+    // disable rs2 channel, but use the adr_virt column to store rs1 + imm
+    let ch_rs2 = lv.rs2_channel();
+    cc.constraint(f_load * ch_rs2.f_on);
+    eval_add(cc, f_load, ch_rs1.val, lv.imm, ch_rs2.adr_virt, lv.f_aux1);
 }
 
 fn eval_store<P: PackedField>(lv: &CpuCols<P>, nv: &CpuCols<P>, cc: &mut ConstraintConsumer<P>) {
@@ -55,22 +50,10 @@ fn eval_store<P: PackedField>(lv: &CpuCols<P>, nv: &CpuCols<P>, cc: &mut Constra
     cc.constraint(f_store * ch_rs2.adr_seg);
     cc.constraint(f_store * (lv.rs2 - ch_rs2.adr_virt));
 
-    //TODO
-    // use rd channel to write to memory
-    let ch_store = lv.rd_channel();
-    cc.constraint(f_store * ch_store.f_on);
-    // cc.constraint(f_store * (P::ONES - ch_store.f_on));
-    // cc.constraint(f_store * (P::ONES - ch_store.f_rw));
-    // cc.constraint(f_store * (P::ONES - ch_store.adr_seg));
-    // cc.constraint(f_store * (ch_rs2.val - ch_store.val));
-    eval_add(
-        cc,
-        f_store,
-        ch_rs1.val,
-        lv.imm,
-        ch_store.adr_virt,
-        lv.f_aux1,
-    );
+    // disable rd channel, but use the adr_virt column to store rs1 + imm
+    let ch_rd = lv.rd_channel();
+    cc.constraint(f_store * ch_rd.f_on);
+    eval_add(cc, f_store, ch_rs1.val, lv.imm, ch_rd.adr_virt, lv.f_aux1);
 }
 
 pub(crate) fn eval<P: PackedField>(

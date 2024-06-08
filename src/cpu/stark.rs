@@ -108,6 +108,7 @@ pub(crate) fn ctl_looking_pack<F: Field>() -> TableWithColumns<F> {
 
     let f_rw = Column::constant(F::ZERO);
     let f_signed = Column::sum(signed_ops);
+
     // rs1 + imm is stored in rs2_channel.adr_virt
     let adr_virt = Column::single(CPU_COL_MAP.rs2_channel().adr_virt);
     let len = Column::linear_combination(load_ops);
@@ -129,6 +130,8 @@ pub(crate) fn ctl_looking_unpack<F: Field>() -> TableWithColumns<F> {
 
     let f_rw = Column::constant(F::ONE);
     let f_signed = Column::constant(F::ZERO);
+
+    // rs1 + imm is stored in rd_channel.adr_virt
     let adr_virt = Column::single(CPU_COL_MAP.rd_channel().adr_virt);
     let len = Column::linear_combination(store_ops);
     let n_channels = F::from_canonical_usize(N_MEM_CHANNELS);
