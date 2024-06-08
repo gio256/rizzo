@@ -20,12 +20,14 @@ use crate::stark::Table;
 use crate::util::fst;
 use crate::vm::opcode::Opcode;
 
+/// Create the timestamp column for memory lookups.
 fn mem_timestamp<F: Field>(channel: usize) -> Column<F> {
     let n = F::from_canonical_usize(N_MEM_CHANNELS);
     let ch = F::from_canonical_usize(channel);
     Column::linear_combination_with_constant([(CPU_COL_MAP.clock, n)], ch)
 }
 
+/// Looking table cpu->memory.
 pub(crate) fn ctl_looking_mem<F: Field>(channel: usize) -> TableWithColumns<F> {
     let ch = &CPU_COL_MAP.membus[channel];
     let mut cols: Vec<_> = Column::singles([ch.f_rw, ch.adr_seg, ch.adr_virt, ch.val]).collect();
@@ -35,6 +37,7 @@ pub(crate) fn ctl_looking_mem<F: Field>(channel: usize) -> TableWithColumns<F> {
     TableWithColumns::new(Table::Cpu as usize, cols, filter)
 }
 
+/// Create lookup columns for binary operations whose second operand is in `rs2`.
 fn ctl_binop_reg<F: Field>() -> Vec<Column<F>> {
     Column::singles([
         CPU_COL_MAP.opcode,
@@ -45,6 +48,7 @@ fn ctl_binop_reg<F: Field>() -> Vec<Column<F>> {
     .collect()
 }
 
+/// Create lookup columns for binary operations whose second operand is `imm`.
 fn ctl_binop_imm<F: Field>() -> Vec<Column<F>> {
     Column::singles([
         CPU_COL_MAP.opcode,
@@ -55,6 +59,7 @@ fn ctl_binop_imm<F: Field>() -> Vec<Column<F>> {
     .collect()
 }
 
+/// Looking table cpu->arithmetic.
 pub(crate) fn ctl_looking_arith_reg<F: Field>() -> TableWithColumns<F> {
     let cols = ctl_binop_reg();
 
@@ -66,6 +71,7 @@ pub(crate) fn ctl_looking_arith_reg<F: Field>() -> TableWithColumns<F> {
     TableWithColumns::new(Table::Cpu as usize, cols, filter)
 }
 
+/// Looking table cpu->arithmetic.
 pub(crate) fn ctl_looking_arith_imm<F: Field>() -> TableWithColumns<F> {
     let cols = ctl_binop_imm();
 
@@ -76,6 +82,7 @@ pub(crate) fn ctl_looking_arith_imm<F: Field>() -> TableWithColumns<F> {
     TableWithColumns::new(Table::Cpu as usize, cols, filter)
 }
 
+/// Looking table cpu->logic.
 pub(crate) fn ctl_looking_logic_reg<F: Field>() -> TableWithColumns<F> {
     let cols = ctl_binop_reg();
 
@@ -87,6 +94,7 @@ pub(crate) fn ctl_looking_logic_reg<F: Field>() -> TableWithColumns<F> {
     TableWithColumns::new(Table::Cpu as usize, cols, filter)
 }
 
+/// Looking table cpu->logic.
 pub(crate) fn ctl_looking_logic_imm<F: Field>() -> TableWithColumns<F> {
     let cols = ctl_binop_imm();
 
@@ -97,6 +105,7 @@ pub(crate) fn ctl_looking_logic_imm<F: Field>() -> TableWithColumns<F> {
     TableWithColumns::new(Table::Cpu as usize, cols, filter)
 }
 
+/// Looking table cpu->byte packing.
 pub(crate) fn ctl_looking_pack<F: Field>() -> TableWithColumns<F> {
     let load_ops = [
         (CPU_COL_MAP.op.f_lb, F::ONE),
@@ -122,6 +131,7 @@ pub(crate) fn ctl_looking_pack<F: Field>() -> TableWithColumns<F> {
     TableWithColumns::new(Table::Cpu as usize, cols, filter)
 }
 
+/// Looking table cpu->byte packing.
 pub(crate) fn ctl_looking_unpack<F: Field>() -> TableWithColumns<F> {
     let store_ops = [
         (CPU_COL_MAP.op.f_sb, F::ONE),
@@ -144,6 +154,7 @@ pub(crate) fn ctl_looking_unpack<F: Field>() -> TableWithColumns<F> {
     TableWithColumns::new(Table::Cpu as usize, cols, filter)
 }
 
+/// Looking table cpu->arith.
 pub(crate) fn ctl_looking_branch<F: Field>() -> TableWithColumns<F> {
     const BRANCH_OPS: [(usize, u8); 4] = [
         (CPU_COL_MAP.op.f_blt, Opcode::SLT as u8),
@@ -203,6 +214,7 @@ pub(crate) fn ctl_looking_bge<F: Field>() -> TableWithColumns<F> {
     TableWithColumns::new(Table::Cpu as usize, cols, filter)
 }
 
+/// Evaluate all CPU constraints.
 fn eval_all<P: PackedField>(lv: &CpuCols<P>, nv: &CpuCols<P>, cc: &mut ConstraintConsumer<P>) {
     clock::eval(lv, nv, cc);
     control_flow::eval(lv, nv, cc);
@@ -215,6 +227,7 @@ fn eval_all<P: PackedField>(lv: &CpuCols<P>, nv: &CpuCols<P>, cc: &mut Constrain
     reg::eval(lv, nv, cc);
 }
 
+/// Evaluate all CPU constraints.
 fn eval_all_circuit<F: RichField + Extendable<D>, const D: usize>(
     cb: &mut CircuitBuilder<F, D>,
     lv: &CpuCols<ExtensionTarget<D>>,

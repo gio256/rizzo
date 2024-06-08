@@ -3,7 +3,7 @@ use core::ops::{Deref, DerefMut, Index, IndexMut};
 
 use crate::pack::N_BYTES;
 
-/// The value of each field is the index of the respective column.
+/// The value of each field is the index of the corresponding column.
 pub(crate) const PACK_COL_MAP: PackCols<usize> = make_col_map();
 pub(crate) const N_PACK_COLS: usize = core::mem::size_of::<PackCols<u8>>();
 const N_BITS: usize = 8;

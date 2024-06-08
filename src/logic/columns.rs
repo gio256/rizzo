@@ -6,7 +6,7 @@ use static_assertions::const_assert;
 
 const N_BITS: usize = 32;
 
-/// The value of each field is the index of the respective column.
+/// The value of each field is the index of the corresponding column.
 pub(crate) const LOGIC_COL_MAP: LogicCols<usize> = make_col_map();
 pub(crate) const N_LOGIC_COLS: usize = core::mem::size_of::<LogicCols<u8>>();
 

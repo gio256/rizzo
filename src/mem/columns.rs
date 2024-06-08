@@ -13,7 +13,7 @@ pub(crate) struct RangeCheck<T> {
     pub freq: T,
 }
 
-/// The value of each field is the index of the respective column.
+/// The value of each field is the index of the corresponding column.
 pub(crate) const MEM_COL_MAP: MemCols<usize> = make_col_map();
 pub(crate) const N_MEM_COLS: usize = core::mem::size_of::<MemCols<u8>>();
 
