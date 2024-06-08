@@ -170,46 +170,6 @@ pub(crate) fn ctl_looking_branch<F: Field>() -> TableWithColumns<F> {
     let f_take_branch = Column::single(CPU_COL_MAP.shared.branch().f_take_branch);
 
     let cols = vec![opcode, rs1_val, rs2_val, f_take_branch];
-
-    let filter = Filter::new_simple(Column::sum(BRANCH_OPS.map(fst)));
-    TableWithColumns::new(Table::Cpu as usize, cols, filter)
-}
-
-// TODO: negate these in arith stark so we can combine the lookups
-// - can use rd_channel.val instead to combine with other binops lookups
-pub(crate) fn ctl_looking_blt<F: Field>() -> TableWithColumns<F> {
-    const BRANCH_OPS: [(usize, u8); 2] = [
-        (CPU_COL_MAP.op.f_blt, Opcode::SLT as u8),
-        (CPU_COL_MAP.op.f_bltu, Opcode::SLTU as u8),
-    ];
-    let op_comb = BRANCH_OPS.map(|(f, op)| (f, F::from_canonical_u8(op)));
-    let opcode = Column::linear_combination(op_comb);
-
-    let rs1_val = Column::single(CPU_COL_MAP.rs1_channel().val);
-    let rs2_val = Column::single(CPU_COL_MAP.rs2_channel().val);
-    let f_take_branch = Column::single(CPU_COL_MAP.shared.branch().f_take_branch);
-
-    let cols = vec![opcode, rs1_val, rs2_val, f_take_branch];
-    let filter = Filter::new_simple(Column::sum(BRANCH_OPS.map(fst)));
-    TableWithColumns::new(Table::Cpu as usize, cols, filter)
-}
-
-pub(crate) fn ctl_looking_bge<F: Field>() -> TableWithColumns<F> {
-    const BRANCH_OPS: [(usize, u8); 2] = [
-        (CPU_COL_MAP.op.f_bge, Opcode::SLT as u8),
-        (CPU_COL_MAP.op.f_bgeu, Opcode::SLTU as u8),
-    ];
-    let op_comb = BRANCH_OPS.map(|(f, op)| (f, F::from_canonical_u8(op)));
-    let opcode = Column::linear_combination(op_comb);
-
-    let rs1_val = Column::single(CPU_COL_MAP.rs1_channel().val);
-    let rs2_val = Column::single(CPU_COL_MAP.rs2_channel().val);
-
-    let f_take_branch = CPU_COL_MAP.shared.branch().f_take_branch;
-    let f_not_take_branch =
-        Column::linear_combination_with_constant(vec![(f_take_branch, F::NEG_ONE)], F::ONE);
-
-    let cols = vec![opcode, rs1_val, rs2_val, f_not_take_branch];
     let filter = Filter::new_simple(Column::sum(BRANCH_OPS.map(fst)));
     TableWithColumns::new(Table::Cpu as usize, cols, filter)
 }
