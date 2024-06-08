@@ -146,10 +146,10 @@ pub(crate) fn ctl_looking_unpack<F: Field>() -> TableWithColumns<F> {
 
 pub(crate) fn ctl_looking_branch<F: Field>() -> TableWithColumns<F> {
     const BRANCH_OPS: [(usize, u8); 4] = [
-        (CPU_COL_MAP.op.f_blt, Opcode::Slt as u8),
-        (CPU_COL_MAP.op.f_bltu, Opcode::Sltu as u8),
-        (CPU_COL_MAP.op.f_bge, Opcode::Bge as u8),
-        (CPU_COL_MAP.op.f_bgeu, Opcode::Bgeu as u8),
+        (CPU_COL_MAP.op.f_blt, Opcode::SLT as u8),
+        (CPU_COL_MAP.op.f_bltu, Opcode::SLTU as u8),
+        (CPU_COL_MAP.op.f_bge, Opcode::BGE as u8),
+        (CPU_COL_MAP.op.f_bgeu, Opcode::BGEU as u8),
     ];
     let op_comb = BRANCH_OPS.map(|(f, op)| (f, F::from_canonical_u8(op)));
     let opcode = Column::linear_combination(op_comb);
@@ -168,8 +168,8 @@ pub(crate) fn ctl_looking_branch<F: Field>() -> TableWithColumns<F> {
 // - can use rd_channel.val instead to combine with other binops lookups
 pub(crate) fn ctl_looking_blt<F: Field>() -> TableWithColumns<F> {
     const BRANCH_OPS: [(usize, u8); 2] = [
-        (CPU_COL_MAP.op.f_blt, Opcode::Slt as u8),
-        (CPU_COL_MAP.op.f_bltu, Opcode::Sltu as u8),
+        (CPU_COL_MAP.op.f_blt, Opcode::SLT as u8),
+        (CPU_COL_MAP.op.f_bltu, Opcode::SLTU as u8),
     ];
     let op_comb = BRANCH_OPS.map(|(f, op)| (f, F::from_canonical_u8(op)));
     let opcode = Column::linear_combination(op_comb);
@@ -185,8 +185,8 @@ pub(crate) fn ctl_looking_blt<F: Field>() -> TableWithColumns<F> {
 
 pub(crate) fn ctl_looking_bge<F: Field>() -> TableWithColumns<F> {
     const BRANCH_OPS: [(usize, u8); 2] = [
-        (CPU_COL_MAP.op.f_bge, Opcode::Slt as u8),
-        (CPU_COL_MAP.op.f_bgeu, Opcode::Sltu as u8),
+        (CPU_COL_MAP.op.f_bge, Opcode::SLT as u8),
+        (CPU_COL_MAP.op.f_bgeu, Opcode::SLTU as u8),
     ];
     let op_comb = BRANCH_OPS.map(|(f, op)| (f, F::from_canonical_u8(op)));
     let opcode = Column::linear_combination(op_comb);

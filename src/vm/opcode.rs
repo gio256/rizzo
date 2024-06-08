@@ -1,38 +1,39 @@
 /// Note that these opcodes are not one-to-one with riscv instructions.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[allow(clippy::upper_case_acronyms)]
 pub(crate) enum Opcode {
     // arithmetic
-    Add,
-    Sub,
-    Slt,
-    Sltu,
+    ADD,
+    SUB,
+    SLT,
+    SLTU,
 
     // logic
-    And,
-    Or,
-    Xor,
+    AND,
+    OR,
+    XOR,
 
     // memory load ops
-    Lw,
-    Lb,
-    Lh,
-    Lbu,
-    Lhu,
+    LW,
+    LB,
+    LH,
+    LBU,
+    LHU,
 
     // memory store ops
-    Sw,
-    Sb,
-    Sh,
+    SW,
+    SB,
+    SH,
 
     // jumps
-    Jal,
-    Jalr,
+    JAL,
+    JALR,
 
     // branching
-    Beq,
-    Bne,
-    Blt,
-    Bge,
-    Bltu,
-    Bgeu,
+    BEQ,
+    BNE,
+    BLT,
+    BGE,
+    BLTU,
+    BGEU,
 }

@@ -20,9 +20,9 @@ use crate::vm::opcode::Opcode;
 
 /// Operation flags and the corresponding opcode.
 const LOGIC_OPS: [(usize, u8); 3] = [
-    (LOGIC_COL_MAP.op.f_and, Opcode::And as u8),
-    (LOGIC_COL_MAP.op.f_xor, Opcode::Xor as u8),
-    (LOGIC_COL_MAP.op.f_or, Opcode::Or as u8),
+    (LOGIC_COL_MAP.op.f_and, Opcode::AND as u8),
+    (LOGIC_COL_MAP.op.f_xor, Opcode::XOR as u8),
+    (LOGIC_COL_MAP.op.f_or, Opcode::OR as u8),
 ];
 
 pub(crate) fn ctl_looked<F: Field>() -> TableWithColumns<F> {

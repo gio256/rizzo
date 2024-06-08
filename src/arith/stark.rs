@@ -21,12 +21,12 @@ use crate::vm::opcode::Opcode;
 
 /// Operation flags and the corresponding opcode.
 const ARITH_OPS: [(usize, u8); 6] = [
-    (ARITH_COL_MAP.op.f_add, Opcode::Add as u8),
-    (ARITH_COL_MAP.op.f_sub, Opcode::Sub as u8),
-    (ARITH_COL_MAP.op.f_ltu, Opcode::Sltu as u8),
-    (ARITH_COL_MAP.op.f_lts, Opcode::Slt as u8),
-    (ARITH_COL_MAP.op.f_geu, Opcode::Bgeu as u8),
-    (ARITH_COL_MAP.op.f_ges, Opcode::Bge as u8),
+    (ARITH_COL_MAP.op.f_add, Opcode::ADD as u8),
+    (ARITH_COL_MAP.op.f_sub, Opcode::SUB as u8),
+    (ARITH_COL_MAP.op.f_ltu, Opcode::SLTU as u8),
+    (ARITH_COL_MAP.op.f_lts, Opcode::SLT as u8),
+    (ARITH_COL_MAP.op.f_geu, Opcode::BGEU as u8),
+    (ARITH_COL_MAP.op.f_ges, Opcode::BGE as u8),
 ];
 
 pub(crate) fn ctl_looked<F: Field>() -> TableWithColumns<F> {
