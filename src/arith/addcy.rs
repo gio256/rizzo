@@ -231,19 +231,6 @@ pub(crate) fn eval_ltu<P: PackedField>(
     eval_addcy(cc, filter, right, diff, left, out, false)
 }
 
-/// `left >u right == out` (unsigned).
-pub(crate) fn eval_gtu<P: PackedField>(
-    cc: &mut ConstraintConsumer<P>,
-    filter: P,
-    left: P,
-    right: P,
-    out: P,
-    diff: P,
-) {
-    // constrain left + diff == right + out * 2^32
-    eval_addcy(cc, filter, left, diff, right, out, false)
-}
-
 #[cfg(test)]
 mod tests {
     use core::borrow::BorrowMut;
