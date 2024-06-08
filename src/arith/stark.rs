@@ -13,8 +13,8 @@ use starky::evaluation_frame::{StarkEvaluationFrame, StarkFrame};
 use starky::lookup::{Column, Filter};
 use starky::stark::Stark;
 
-use crate::arith::addcy;
 use crate::arith::columns::{ArithCols, ARITH_COL_MAP, N_ARITH_COLS};
+use crate::arith::{addcy, flags};
 use crate::stark::Table;
 use crate::util::fst;
 use crate::vm::opcode::Opcode;
@@ -46,7 +46,8 @@ pub(crate) struct ArithStark<F, const D: usize> {
 }
 
 fn eval_all<P: PackedField>(lv: &ArithCols<P>, nv: &ArithCols<P>, cc: &mut ConstraintConsumer<P>) {
-    addcy::eval(lv, cc)
+    flags::eval(lv, cc);
+    addcy::eval(lv, cc);
 }
 
 fn eval_all_circuit<F: RichField + Extendable<D>, const D: usize>(
