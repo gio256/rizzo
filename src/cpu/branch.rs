@@ -17,14 +17,15 @@ pub(crate) fn eval<P: PackedField>(
 ) {
     let f_beq = lv.op.f_beq;
     let f_bne = lv.op.f_bne;
-    let f_bltu = lv.op.f_bltu;
-    let f_bgeu = lv.op.f_bgeu;
-    let f_branch = f_beq + f_bne + f_bltu + f_bgeu;
+    let f_branch = f_beq + f_bne + lv.op.f_bltu + lv.op.f_bgeu + lv.op.f_blt + lv.op.f_bge;
     let f_not_branch = P::ONES - f_branch;
 
     let blv = lv.shared.branch();
     let f_take_branch = blv.f_take_branch;
     let f_not_take_branch = P::ONES - f_take_branch;
+
+    // at most one branch flag set
+    cc.constraint(f_branch * (f_branch - P::ONES));
 
     // f_take_branch in {0, 1}
     cc.constraint(f_branch * f_take_branch * (f_take_branch - P::ONES));
@@ -48,10 +49,6 @@ pub(crate) fn eval<P: PackedField>(
     cc.constraint(f_branch * ch_rs2.adr_seg);
     cc.constraint(f_branch * (lv.rs2 - ch_rs2.adr_virt));
     let rs2_val = ch_rs2.val;
-
-    //TODO: are these constraints sufficient for bltu and bgeu?
-    eval_ltu(cc, f_bltu, rs1_val, rs2_val, f_take_branch, lv.f_aux1);
-    eval_ltu(cc, f_bgeu, rs1_val, rs2_val, f_not_take_branch, lv.f_aux1);
 
     let diff = rs1_val - rs2_val;
     let diff_pinv = blv.diff_pinv;
