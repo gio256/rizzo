@@ -4,12 +4,13 @@ pub(crate) enum Opcode {
     // arithmetic
     Add,
     Sub,
-    And,
+    Slt,
+    Sltu,
 
     // logic
+    And,
     Or,
     Xor,
-    Sltu,
 
     // memory load ops
     Lw,
@@ -30,6 +31,8 @@ pub(crate) enum Opcode {
     // branching
     Beq,
     Bne,
+    Blt,
+    Bge,
     Bltu,
     Bgeu,
 }

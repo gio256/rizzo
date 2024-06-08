@@ -29,6 +29,7 @@ fn ctl_arith<F: Field>() -> CrossTableLookup<F> {
     let looking = vec![
         cpu::stark::ctl_looking_arith_reg(),
         cpu::stark::ctl_looking_arith_imm(),
+        cpu::stark::ctl_looking_branch(),
     ];
     let looked = arith::stark::ctl_looked();
     CrossTableLookup::new(looking, looked)

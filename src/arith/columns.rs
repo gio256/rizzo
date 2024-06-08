@@ -1,7 +1,7 @@
 use core::borrow::{Borrow, BorrowMut};
 use core::ops::{Deref, DerefMut, Index, IndexMut};
 
-/// The value of each field is the index of the respective column.
+/// The value of each field is the index of the corresponding column.
 pub(crate) const ARITH_COL_MAP: ArithCols<usize> = make_col_map();
 pub(crate) const N_ARITH_COLS: usize = core::mem::size_of::<ArithCols<u8>>();
 pub(crate) const N_OP_COLS: usize = core::mem::size_of::<OpCols<u8>>();
@@ -10,9 +10,18 @@ pub(crate) const N_OP_COLS: usize = core::mem::size_of::<OpCols<u8>>();
 #[repr(C)]
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub(crate) struct OpCols<T> {
+    /// Addition.
     pub f_add: T,
+    /// Subtraction.
     pub f_sub: T,
+    /// Unsigned less than.
     pub f_ltu: T,
+    /// Signed less than.
+    pub f_lts: T,
+    /// Unsigned greater than or equal to.
+    pub f_geu: T,
+    /// Signed greater than or equal to.
+    pub f_ges: T,
 }
 
 /// Columns for the arithmetic stark.
@@ -29,6 +38,14 @@ pub(crate) struct ArithCols<T> {
     pub out: T,
     /// Auxiliary column.
     pub aux: T,
+    /// Contains `in0 + 2^31`. Used for signed less than.
+    pub in0_bias: T,
+    /// Contains `in1 + 2^31`. Used for signed less than.
+    pub in1_bias: T,
+    /// Auxiliary column used for signed less than.
+    pub in0_aux: T,
+    /// Auxiliary column used for signed less than.
+    pub in1_aux: T,
 }
 
 const fn make_col_map() -> ArithCols<usize> {

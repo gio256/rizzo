@@ -48,9 +48,11 @@ pub(crate) struct OpCols<T> {
     pub f_bne: T,
     pub f_bltu: T,
     pub f_bgeu: T,
+    pub f_blt: T,
+    pub f_bge: T,
 }
 
-/// The value of each field is the index of the respective column.
+/// The value of each field is the index of the corresponding column.
 pub(crate) const CPU_COL_MAP: CpuCols<usize> = make_col_map();
 pub(crate) const N_CPU_COLS: usize = core::mem::size_of::<CpuCols<u8>>();
 
