@@ -1,4 +1,4 @@
-//! Constraints for ADD, SUB, and SLTU.
+//! Constraints for ADD, SUB, SLT, SLTU, and branching comparisons.
 //!
 //! This is essentially [zk_evm]'s "add with carry out" implementation, except
 //! that we only have one limb to deal with.
@@ -31,40 +31,42 @@ pub(crate) fn generate<F: PrimeField64>(
 
     if filter == ARITH_COL_MAP.op.f_add {
         let (res, cy) = left.overflowing_add(right);
-        lv.aux = F::from_canonical_u32(cy as u32);
+        lv.aux = F::from_bool(cy);
         lv.out = F::from_canonical_u32(res);
     } else if filter == ARITH_COL_MAP.op.f_sub {
         let (diff, cy) = left.overflowing_sub(right);
-        lv.aux = F::from_canonical_u32(cy as u32);
+        lv.aux = F::from_bool(cy);
         lv.out = F::from_canonical_u32(diff);
     } else if filter == ARITH_COL_MAP.op.f_ltu {
         let (diff, lt) = left.overflowing_sub(right);
         lv.aux = F::from_canonical_u32(diff);
-        lv.out = F::from_canonical_u32(lt as u32);
+        lv.out = F::from_bool(lt);
     } else if filter == ARITH_COL_MAP.op.f_geu {
         let (diff, lt) = left.overflowing_sub(right);
         lv.aux = F::from_canonical_u32(diff);
-        lv.out = F::from_canonical_u32(!lt as u32);
+        lv.out = F::from_bool(!lt);
     } else if filter == ARITH_COL_MAP.op.f_lts {
         let (bias0, cy0) = left.overflowing_add(SIGN_BIT);
         let (bias1, cy1) = right.overflowing_add(SIGN_BIT);
         let (diff, lt) = bias0.overflowing_sub(bias1);
+
         lv.in0_bias = F::from_canonical_u32(bias0);
         lv.in1_bias = F::from_canonical_u32(bias1);
-        lv.in0_aux = F::from_canonical_u32(cy0 as u32);
-        lv.in1_aux = F::from_canonical_u32(cy1 as u32);
+        lv.in0_aux = F::from_bool(cy0);
+        lv.in1_aux = F::from_bool(cy1);
         lv.aux = F::from_canonical_u32(diff);
-        lv.out = F::from_canonical_u32(lt as u32);
+        lv.out = F::from_bool(lt);
     } else if filter == ARITH_COL_MAP.op.f_ges {
         let (bias0, cy0) = left.overflowing_add(SIGN_BIT);
         let (bias1, cy1) = right.overflowing_add(SIGN_BIT);
         let (diff, lt) = bias0.overflowing_sub(bias1);
+
         lv.in0_bias = F::from_canonical_u32(bias0);
         lv.in1_bias = F::from_canonical_u32(bias1);
-        lv.in0_aux = F::from_canonical_u32(cy0 as u32);
-        lv.in1_aux = F::from_canonical_u32(cy1 as u32);
+        lv.in0_aux = F::from_bool(cy0);
+        lv.in1_aux = F::from_bool(cy1);
         lv.aux = F::from_canonical_u32(diff);
-        lv.out = F::from_canonical_u32(!lt as u32);
+        lv.out = F::from_bool(!lt);
     } else {
         panic!("bad instruction filter")
     };
