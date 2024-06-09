@@ -56,9 +56,12 @@ impl PackOp {
         let sign_bit = high_byte >> 7;
 
         // determine whether extension bits should be set or unset
-        let sign_ext = self.signed && (sign_bit != 0);
-        let ext_byte = if sign_ext { u8::MAX } else { 0 };
-        row.f_sign_ext = F::from_bool(sign_ext);
+        let ext_byte = if self.signed && sign_bit != 0 {
+            u8::MAX
+        } else {
+            0
+        };
+        row.ext_byte = F::from_canonical_u8(ext_byte);
 
         // deconstruct the most significant byte
         row.high_bits = (0..8)

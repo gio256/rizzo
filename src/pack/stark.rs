@@ -77,12 +77,10 @@ fn eval_all<P: PackedField>(lv: &PackCols<P>, nv: &PackCols<P>, cc: &mut Constra
     let f_rw = lv.f_rw;
     cc.constraint(f_rw * (f_rw - P::ONES));
 
-    // sign flags in {0, 1}
+    // sign flag in {0, 1}
     let f_signed = lv.f_signed;
-    let f_sign_ext = lv.f_sign_ext;
-    let f_zero_ext = P::ONES - f_sign_ext;
+    let f_unsigned = P::ONES - f_signed;
     cc.constraint(f_signed * (f_signed - P::ONES));
-    cc.constraint(f_sign_ext * (f_sign_ext - P::ONES));
 
     // high bits are all in {0, 1}
     let high_bits = lv.high_bits;
@@ -90,9 +88,16 @@ fn eval_all<P: PackedField>(lv: &PackCols<P>, nv: &PackCols<P>, cc: &mut Constra
         cc.constraint(bit * (bit - P::ONES));
     }
 
+    // ext_byte in {0x00, 0xff}
+    let ext_byte = lv.ext_byte;
+    let ff = P::Scalar::from_canonical_u8(u8::MAX);
+    cc.constraint(ext_byte * (ext_byte - ff));
+
     // if f_signed, extend with the most significant bit
-    let sign_bit = *high_bits.last().unwrap();
-    cc.constraint(f_sign_ext - (f_signed * sign_bit));
+    let sign_bit = high_bits[7];
+    let not_sign_bit = P::ONES - sign_bit;
+    cc.constraint(f_signed * sign_bit * (ext_byte - ff));
+    cc.constraint((f_unsigned + not_sign_bit) * ext_byte);
 
     // high_bits should reconstruct the most significant byte
     let high_byte: P = high_bits
@@ -101,15 +106,13 @@ fn eval_all<P: PackedField>(lv: &PackCols<P>, nv: &PackCols<P>, cc: &mut Constra
         .map(|(bit, base)| bit * base)
         .sum();
 
-    let ff = P::Scalar::from_canonical_u8(u8::MAX);
     for (i, idx) in len_idx.into_iter().enumerate() {
         // match high_byte with the most significant byte
         cc.constraint(idx * (high_byte - lv.bytes[i]));
 
-        // all bytes beyond the length are 0 if zero extending or 0xff if sign extending
+        // all bytes beyond the length are equal to the extension byte
         for &byte in &lv.bytes[i + 1..] {
-            cc.constraint(f_zero_ext * idx * byte);
-            cc.constraint(f_sign_ext * idx * (ff - byte));
+            cc.constraint(idx * (byte - ext_byte));
         }
     }
 

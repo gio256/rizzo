@@ -29,7 +29,7 @@ pub(crate) struct LogicCols<T: Copy> {
     pub in0: [T; N_BITS],
     /// Second operand, decomposed into bits.
     pub in1: [T; N_BITS],
-    /// Output, stored as a single value.
+    /// Output, stored as a single field element.
     pub out: T,
 }
 
