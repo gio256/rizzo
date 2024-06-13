@@ -1,4 +1,5 @@
 use core::borrow::Borrow;
+use core::iter::zip;
 use core::marker::PhantomData;
 
 use plonky2::field::extension::{Extendable, FieldExtension};
@@ -13,7 +14,7 @@ use starky::evaluation_frame::{StarkEvaluationFrame, StarkFrame};
 use starky::lookup::{Column, Filter};
 use starky::stark::Stark;
 
-use crate::logic::columns::{LogicCols, LOGIC_COL_MAP, N_LOGIC_COLS};
+use crate::logic::columns::{LogicCols, LOGIC_COL_MAP, N_LOGIC_COLS, WORD_BITS};
 use crate::stark::Table;
 use crate::util::fst;
 use crate::vm::opcode::Opcode;
@@ -41,11 +42,17 @@ fn eval_all<P: PackedField>(lv: &LogicCols<P>, nv: &LogicCols<P>, cc: &mut Const
     let f_and = lv.op.f_and;
     let f_xor = lv.op.f_xor;
     let f_or = lv.op.f_or;
+    let f_sll = lv.op.f_sll;
+    let f_srl = lv.op.f_srl;
+    let f_sra = lv.op.f_sra;
 
     // flags in {0, 1}
     cc.constraint(f_and * (f_and - P::ONES));
     cc.constraint(f_xor * (f_xor - P::ONES));
     cc.constraint(f_or * (f_or - P::ONES));
+    cc.constraint(f_sll * (f_sll - P::ONES));
+    cc.constraint(f_srl * (f_srl - P::ONES));
+    cc.constraint(f_sra * (f_sra - P::ONES));
 
     // at most one op flag is set
     let flag_sum: P = f_and + f_xor + f_or;
@@ -59,7 +66,77 @@ fn eval_all<P: PackedField>(lv: &LogicCols<P>, nv: &LogicCols<P>, cc: &mut Const
         cc.constraint(bit * (bit - P::ONES));
     }
 
-    //TODO
+    let bits = lv.in0;
+    let shift_amt = lv.in1;
+
+    // sll: logical shift towards the most significant bit.
+    //[ 1 0 0 0 1 0 0 0 ] input bits
+    //[ 0 0 0 1 0 0 0 0 ] shift_amt, indexed by n
+    //[ 0 0 0 1 0 0 0 1 ] output
+    //
+    // let mut sll_out = P::ZEROS;
+    // for (n, f_n) in lv.in1.into_iter().enumerate() {
+    //     for m in n..WORD_BITS {
+    //         sll_out += f_n * lv.in0[m - n] * P::Scalar::from_canonical_u32(1 << m);
+    //     }
+    // }
+    //
+    // n is the (hypothetical) number of bits to shift by.
+    // f_n is a flag indicating whether this is really the n to shift by.
+    // All bits in the output with index < n are 0.
+    let sll_out: P = shift_amt
+        .into_iter()
+        .enumerate()
+        .flat_map(|(n, f_n)| {
+            bits.iter()
+                .take(WORD_BITS - n)
+                .zip(P::Scalar::TWO.powers().skip(n))
+                .map(move |(&bit, base)| f_n * bit * base)
+        })
+        .sum();
+    cc.constraint(f_sll * (lv.out - sll_out));
+
+    // srl: logical shift towards the least significant bit
+    //[ 0 0 0 1 0 0 0 1 ] input bits
+    //[ 0 0 0 1 0 0 0 0 ] shift_amt, indexed by n
+    //[ 1 0 0 0 1 0 0 0 ] output
+    //
+    // let mut srl_out = P::ZEROS;
+    // for (n, f_n) in lv.in1.into_iter().enumerate() {
+    //     for m in n..WORD_BITS {
+    //         srl_out += f_n * lv.in0[m] * P::Scalar::from_canonical_u32(1 << (m - n));
+    //     }
+    // }
+    let srl_out: P = shift_amt
+        .into_iter()
+        .enumerate()
+        .flat_map(|(n, f_n)| {
+            bits.iter()
+                .skip(n)
+                .zip(P::Scalar::TWO.powers())
+                .map(move |(&bit, base)| f_n * bit * base)
+        })
+        .sum();
+    cc.constraint(f_srl * (lv.out - srl_out));
+
+    // sra: aithmetic shift towards the least significant bit
+    //[ 0 0 0 1 0 0 0 1 ] input bits
+    //[ 0 0 0 1 0 0 0 0 ] shift_amt, indexed by n
+    //[ 1 0 0 0 1 1 1 1 ] output
+    let ext_bit = *bits.last().unwrap();
+    let sra_ext: P = shift_amt
+        .into_iter()
+        .enumerate()
+        .flat_map(|(n, f_n)| {
+            P::Scalar::TWO
+                .powers()
+                .skip(WORD_BITS - n)
+                .take(n)
+                .map(move |base| f_n * ext_bit * base)
+        })
+        .sum();
+    let sra_out = srl_out + sra_ext;
+    cc.constraint(f_sra * (lv.out - sra_out));
 }
 
 fn eval_all_circuit<F: RichField + Extendable<D>, const D: usize>(

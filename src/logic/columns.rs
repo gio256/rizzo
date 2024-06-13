@@ -4,7 +4,7 @@ use core::ops::{Deref, DerefMut, Index, IndexMut};
 use plonky2::field::packed::PackedField;
 use static_assertions::const_assert;
 
-const N_BITS: usize = 32;
+pub(crate) const WORD_BITS: usize = 32;
 
 /// The value of each field is the index of the corresponding column.
 pub(crate) const LOGIC_COL_MAP: LogicCols<usize> = make_col_map();
@@ -17,6 +17,9 @@ pub(crate) struct OpCols<T: Copy> {
     pub f_and: T,
     pub f_xor: T,
     pub f_or: T,
+    pub f_sll: T,
+    pub f_srl: T,
+    pub f_sra: T,
 }
 
 /// Columns for the logic stark.
@@ -26,9 +29,9 @@ pub(crate) struct LogicCols<T: Copy> {
     /// The operation to perform.
     pub op: OpCols<T>,
     /// First operand, decomposed into bits.
-    pub in0: [T; N_BITS],
+    pub in0: [T; WORD_BITS],
     /// Second operand, decomposed into bits.
-    pub in1: [T; N_BITS],
+    pub in1: [T; WORD_BITS],
     /// Output, stored as a single field element.
     pub out: T,
 }
