@@ -10,10 +10,10 @@ categories = ["cryptography", "emulators"]
 [dependencies]
 anyhow = "1.0.86"
 hashbrown = "0.14.0"
-plonky2 = "0.2.2"
-plonky2_maybe_rayon = "0.2.0"
-plonky2_util = "0.2.0"
-starky = "0.4.0"
+plonky2 = { git = "https://github.com/0xPolygonZero/plonky2.git", rev = "7ba3c1f298faddb99543b59fe24d898f092f78e8" }
+plonky2_maybe_rayon = { git = "https://github.com/0xPolygonZero/plonky2.git", rev = "7ba3c1f298faddb99543b59fe24d898f092f78e8" }
+plonky2_util = { git = "https://github.com/0xPolygonZero/plonky2.git", rev = "7ba3c1f298faddb99543b59fe24d898f092f78e8" }
+starky = { git = "https://github.com/0xPolygonZero/plonky2.git", rev = "7ba3c1f298faddb99543b59fe24d898f092f78e8" }
 static_assertions = "1.1.0"
 itertools = "0.13.0"
 
