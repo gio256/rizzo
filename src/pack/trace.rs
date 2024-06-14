@@ -64,11 +64,7 @@ impl PackOp {
         row.ext_byte = F::from_canonical_u8(ext_byte);
 
         // deconstruct the most significant byte
-        row.high_bits = (0..8)
-            .map(|i| F::from_bool(high_byte & (1 << i) != 0))
-            .collect::<Vec<_>>()
-            .try_into()
-            .unwrap();
+        row.high_bits = core::array::from_fn(|i| F::from_bool(high_byte & (1 << i) != 0));
 
         // write (maybe sign extended) little-endian bytes to row
         row.bytes = self
