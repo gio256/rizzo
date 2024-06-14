@@ -35,12 +35,13 @@ fn ctl_arith<F: Field>() -> CrossTableLookup<F> {
     CrossTableLookup::new(looking, looked)
 }
 
+//TODO: add ctl_looked_shift as looked table. [#1575](https://github.com/0xPolygonZero/plonky2/pull/1575)
 fn ctl_logic<F: Field>() -> CrossTableLookup<F> {
     let looking = vec![
         cpu::stark::ctl_looking_logic_reg(),
         cpu::stark::ctl_looking_logic_imm(),
     ];
-    let looked = logic::stark::ctl_looked();
+    let looked = logic::stark::ctl_looked_logic();
     CrossTableLookup::new(looking, looked)
 }
 

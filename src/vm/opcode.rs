@@ -12,6 +12,9 @@ pub(crate) enum Opcode {
     AND,
     OR,
     XOR,
+    SLL,
+    SRL,
+    SRA,
 
     // memory load ops
     LW,

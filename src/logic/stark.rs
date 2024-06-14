@@ -19,14 +19,38 @@ use crate::stark::Table;
 use crate::util::fst;
 use crate::vm::opcode::Opcode;
 
-/// Operation flags and the corresponding opcode.
+/// Operation flags and the corresponding opcode for AND, XOR, and OR.
 const LOGIC_OPS: [(usize, u8); 3] = [
     (LOGIC_COL_MAP.op.f_and, Opcode::AND as u8),
     (LOGIC_COL_MAP.op.f_xor, Opcode::XOR as u8),
     (LOGIC_COL_MAP.op.f_or, Opcode::OR as u8),
 ];
 
-pub(crate) fn ctl_looked<F: Field>() -> TableWithColumns<F> {
+/// Operation flags and the corresponding opcode for SLL, SRL, and SRA.
+const SHIFT_OPS: [(usize, u8); 3] = [
+    (LOGIC_COL_MAP.op.f_sll, Opcode::SLL as u8),
+    (LOGIC_COL_MAP.op.f_srl, Opcode::SRL as u8),
+    (LOGIC_COL_MAP.op.f_sra, Opcode::SRA as u8),
+];
+
+pub(crate) fn ctl_looked_shift<F: Field>() -> TableWithColumns<F> {
+    let op_comb = SHIFT_OPS.map(|(f, op)| (f, F::from_canonical_u8(op)));
+    let op = Column::linear_combination(op_comb);
+    let in0 = Column::le_bits(LOGIC_COL_MAP.in0);
+    let shift_amt_comb = LOGIC_COL_MAP
+        .in1
+        .into_iter()
+        .enumerate()
+        .map(|(i, col)| (col, F::from_canonical_usize(i)));
+    let in1 = Column::linear_combination(shift_amt_comb);
+    let out = Column::single(LOGIC_COL_MAP.out);
+
+    let cols = vec![op, in0, in1, out];
+    let filter = Filter::new_simple(Column::sum(SHIFT_OPS.map(fst)));
+    TableWithColumns::new(Table::Logic as usize, cols, filter)
+}
+
+pub(crate) fn ctl_looked_logic<F: Field>() -> TableWithColumns<F> {
     let op_comb = LOGIC_OPS.map(|(f, op)| (f, F::from_canonical_u8(op)));
     let op = Column::linear_combination(op_comb);
     let in0 = Column::le_bits(LOGIC_COL_MAP.in0);
