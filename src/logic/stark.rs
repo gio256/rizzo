@@ -63,22 +63,15 @@ pub(crate) fn ctl_looked_shift<F: Field>() -> TableWithColumns<F> {
 }
 
 /// Logical shift towards the most significant bit.
-/// [ 1 0 0 0 1 0 0 0 ] input bits (LE)
-/// [ 0 0 0 1 0 0 0 0 ] shift_amt, indexed by n
-/// [ 0 0 0 1 0 0 0 1 ] output
-///```ignore
-/// let mut sll_out = P::ZEROS;
-/// for (n, f_n) in lv.in1.into_iter().enumerate() {
-///     for m in n..WORD_BITS {
-///         sll_out += f_n * lv.in0[m - n] * P::Scalar::from_canonical_u32(1 << m);
-///     }
-/// }
-///```
-/// n is the (hypothetical) number of bits to shift by.
-/// f_n is a flag indicating whether this is really the n to shift by.
-/// All bits in the output with index < n are 0.
-/// We match up bits[..WORD_BITS - n] with the sequence (2^n, 2^n+1, ...).
 fn sll<P: PackedField>(bits: &[P; WORD_BITS], shift_amt: &[P; WORD_BITS]) -> P {
+    // [ 1 0 0 0 1 0 0 0 ] input bits (LE).
+    // [ 0 0 0 1 0 0 0 0 ] shift_amt, indexed by n.
+    // [ 0 0 0 1 0 0 0 1 ] output bits (LE).
+    //
+    // n is the (hypothetical) number of bits to shift by.
+    // f_n is a flag indicating whether this is really the n to shift by.
+    // All bits in the output with index < n are 0.
+    // We match up bits[..WORD_BITS - n] with the sequence (2^n, 2^n+1, ...).
     shift_amt
         .iter()
         .enumerate()
@@ -92,21 +85,14 @@ fn sll<P: PackedField>(bits: &[P; WORD_BITS], shift_amt: &[P; WORD_BITS]) -> P {
 }
 
 /// Logical shift towards the least significant bit.
-///[ 0 0 0 1 0 0 0 1 ] input bits (LE)
-///[ 0 0 0 1 0 0 0 0 ] shift_amt, indexed by n
-///[ 1 0 0 0 1 0 0 0 ] output
-///```ignore
-/// let mut srl_out = P::ZEROS;
-/// for (n, f_n) in lv.in1.into_iter().enumerate() {
-///     for m in n..WORD_BITS {
-///         srl_out += f_n * lv.in0[m] * P::Scalar::from_canonical_u32(1 << (m - n));
-///     }
-/// }
-///```
-/// n is the (hypothetical) number of bits to shift by.
-/// f_n is a flag indicating whether this is really the n to shift by.
-/// We match up bits[n..] with the sequence (2^0, 2^1, ...).
 fn srl<P: PackedField>(bits: &[P; WORD_BITS], shift_amt: &[P; WORD_BITS]) -> P {
+    // [ 0 0 0 1 0 0 0 1 ] input bits (LE).
+    // [ 0 0 0 1 0 0 0 0 ] shift_amt, indexed by n.
+    // [ 1 0 0 0 1 0 0 0 ] output bits (LE).
+    //
+    // n is the (hypothetical) number of bits to shift by.
+    // f_n is a flag indicating whether this is really the n to shift by.
+    // We match up bits[n..] with the sequence (2^0, 2^1, ...).
     shift_amt
         .iter()
         .enumerate()
@@ -119,15 +105,17 @@ fn srl<P: PackedField>(bits: &[P; WORD_BITS], shift_amt: &[P; WORD_BITS]) -> P {
         .sum()
 }
 
-/// Aithmetic shift towards the least significant bit.
-///[ 0 0 0 1 0 0 0 1 ] input bits (LE)
-///[ 0 0 0 1 0 0 0 0 ] shift_amt, indexed by n
-///[ 1 0 0 0 1 1 1 1 ] output
-///
-/// n is the (hypothetical) number of bits to shift by.
-/// f_n is a flag indicating whether this is really the n to shift by.
-/// We repeat bits[WORD_SIZE - 1] n times, scaling by 2^(WORD_BITS - n)..2^WORD_BITS.
+/// Aithmetic shift towards the least significant bit. Returns a field element
+/// representing the value of the sign extension bits only. This should be added
+/// to the output of [`srl`] to get the expected output of the `SRA` instruction.
 fn sra_ext<P: PackedField>(bits: &[P; WORD_BITS], shift_amt: &[P; WORD_BITS]) -> P {
+    // [ 0 0 0 1 0 0 0 1 ] input bits (LE).
+    // [ 0 0 0 1 0 0 0 0 ] shift_amt, indexed by n.
+    // [ 1 0 0 0 1 1 1 1 ] output bits (LE).
+    //
+    // n is the (hypothetical) number of bits to shift by.
+    // f_n is a flag indicating whether this is really the n to shift by.
+    // We repeat bits[WORD_SIZE - 1] n times, scaling by 2^(WORD_BITS - n)..2^WORD_BITS.
     let ext_bit = *bits.last().unwrap();
     shift_amt
         .iter()
