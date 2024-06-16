@@ -10,6 +10,16 @@ pub(crate) fn felt_from_le_bits<P: PackedField>(bits: impl IntoIterator<Item = P
         .sum()
 }
 
+/// Returns the decomposition of `x` into bits in little-endian order.
+pub(crate) fn u32_to_le_bits<F: Field>(x: u32) -> [F; 32] {
+    core::array::from_fn(|i| F::from_bool(x & (1 << i) != 0))
+}
+
+/// Returns the decomposition of `x` into bits in little-endian order.
+pub(crate) fn u8_to_le_bits<F: Field>(x: u8) -> [F; 8] {
+    core::array::from_fn(|i| F::from_bool(x & (1 << i) != 0))
+}
+
 /// Returns [0,1,..,N].
 pub(crate) const fn indices_arr<const N: usize>() -> [usize; N] {
     let mut arr = [0; N];

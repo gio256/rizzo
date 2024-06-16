@@ -9,6 +9,7 @@ pub(crate) const WORD_BITS: usize = 32;
 /// The value of each field is the index of the corresponding column.
 pub(crate) const LOGIC_COL_MAP: LogicCols<usize> = make_col_map();
 pub(crate) const N_LOGIC_COLS: usize = core::mem::size_of::<LogicCols<u8>>();
+pub(crate) const N_OP_COLS: usize = core::mem::size_of::<OpCols<u8>>();
 
 /// Flag columns for the operation to perform.
 #[repr(C)]
@@ -85,5 +86,18 @@ where
     fn index_mut(&mut self, i: I) -> &mut Self::Output {
         let arr: &mut [T; N_LOGIC_COLS] = self.borrow_mut();
         <[T] as IndexMut<I>>::index_mut(arr, i)
+    }
+}
+
+impl<T: Copy> Deref for OpCols<T> {
+    type Target = [T; N_OP_COLS];
+    fn deref(&self) -> &Self::Target {
+        unsafe { core::mem::transmute(self) }
+    }
+}
+
+impl<T: Copy> DerefMut for OpCols<T> {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        unsafe { core::mem::transmute(self) }
     }
 }
