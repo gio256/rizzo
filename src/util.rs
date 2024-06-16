@@ -1,3 +1,15 @@
+use plonky2::field::packed::PackedField;
+use plonky2::field::types::{Field, PrimeField64};
+
+/// Returns a field element constructed from its representation as a
+/// little-endian ordered iterator over field elements in {0, 1}.
+pub(crate) fn felt_from_le_bits<P: PackedField>(bits: impl IntoIterator<Item = P>) -> P {
+    bits.into_iter()
+        .zip(P::Scalar::TWO.powers())
+        .map(|(bit, base)| bit * base)
+        .sum()
+}
+
 /// Returns [0,1,..,N].
 pub(crate) const fn indices_arr<const N: usize>() -> [usize; N] {
     let mut arr = [0; N];

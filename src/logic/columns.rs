@@ -34,6 +34,8 @@ pub(crate) struct LogicCols<T: Copy> {
     pub in1: [T; WORD_BITS],
     /// Output, stored as a single field element.
     pub out: T,
+    /// `in0 & in1`, stored as a single field element.
+    pub and: T,
 }
 
 const fn make_col_map() -> LogicCols<usize> {

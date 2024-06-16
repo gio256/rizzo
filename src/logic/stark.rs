@@ -2,6 +2,7 @@ use core::borrow::Borrow;
 use core::iter::zip;
 use core::marker::PhantomData;
 
+use itertools::izip;
 use plonky2::field::extension::{Extendable, FieldExtension};
 use plonky2::field::packed::PackedField;
 use plonky2::field::types::{Field, PrimeField64};
@@ -16,7 +17,7 @@ use starky::stark::Stark;
 
 use crate::logic::columns::{LogicCols, LOGIC_COL_MAP, N_LOGIC_COLS, WORD_BITS};
 use crate::stark::Table;
-use crate::util::fst;
+use crate::util::{felt_from_le_bits, fst};
 use crate::vm::opcode::Opcode;
 
 /// Operation flags and the corresponding opcode for AND, XOR, and OR.
@@ -147,7 +148,7 @@ fn eval_all<P: PackedField>(lv: &LogicCols<P>, nv: &LogicCols<P>, cc: &mut Const
     cc.constraint(f_sra * (f_sra - P::ONES));
 
     // at most one op flag is set
-    let flag_sum: P = f_and + f_xor + f_or;
+    let flag_sum: P = f_and + f_xor + f_or + f_sll + f_srl + f_sra;
     cc.constraint(flag_sum * (flag_sum - P::ONES));
 
     // input bit values in {0, 1}
@@ -158,14 +159,42 @@ fn eval_all<P: PackedField>(lv: &LogicCols<P>, nv: &LogicCols<P>, cc: &mut Const
         cc.constraint(bit * (bit - P::ONES));
     }
 
-    //TODO: constraints for AND, OR, XOR
+    // Constraints for AND, OR, and XOR from zk_evm
+    // https://github.com/0xPolygonZero/zk_evm/blob/develop/evm_arithmetization/src/logic.rs#L251
+    // `x op y = sum_coeff * (x + y) + and_coeff * (x & y)` where
+    // `AND => sum_coeff = 0, and_coeff = 1`
+    // `OR  => sum_coeff = 1, and_coeff = -1`
+    // `XOR => sum_coeff = 1, and_coeff = -2`
+    let sum_coeff = f_or + f_xor;
+    let and_coeff = f_and - f_or - f_xor * P::Scalar::TWO;
+    let f_logic = f_and + f_xor + f_or;
 
+    // `in0 & in1` reconstructed as a single field element.
+    let x_and_y: P = izip!(lv.in0, lv.in1, P::Scalar::TWO.powers())
+        .map(|(x_bit, y_bit, base)| x_bit * y_bit * base)
+        .sum();
+
+    // Ensure `lv.and` contains the correct result, used to lower the degree
+    // of the output constraint.
+    cc.constraint(f_logic * (lv.and - x_and_y));
+
+    // in0 and in1 reconstructed as field elements.
+    let x = felt_from_le_bits(lv.in0);
+    let y = felt_from_le_bits(lv.in1);
+
+    // Output constraint for AND, OR, and XOR.
+    let x_op_y = sum_coeff * (x + y) + and_coeff * lv.and;
+    cc.constraint(f_logic * (lv.out - x_op_y));
+
+    // SLL
     let sll_out = sll(&lv.in0, &lv.in1);
     cc.constraint(f_sll * (lv.out - sll_out));
 
+    // SRL
     let srl_out = srl(&lv.in0, &lv.in1);
     cc.constraint(f_srl * (lv.out - srl_out));
 
+    // SRA
     let sra_ext = sra_ext(&lv.in0, &lv.in1);
     let sra_out = srl_out + sra_ext;
     cc.constraint(f_sra * (lv.out - sra_out));
