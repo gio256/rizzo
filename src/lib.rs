@@ -4,7 +4,7 @@
 pub mod arith;
 pub mod cpu;
 pub mod iter;
-pub mod logic;
+pub mod bits;
 pub mod mem;
 pub mod pack;
 pub mod stark;

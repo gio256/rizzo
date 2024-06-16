@@ -8,11 +8,11 @@ use plonky2::plonk::circuit_builder::CircuitBuilder;
 use starky::constraint_consumer::{ConstraintConsumer, RecursiveConstraintConsumer};
 
 use crate::util::felt_from_le_bits;
-use crate::logic::columns::{LogicCols, LOGIC_COL_MAP};
+use crate::bits::columns::{BitCols, BIT_COL_MAP};
 
 /// Constraints for AND, OR, and XOR from
 /// [zk_evm](https://github.com/0xPolygonZero/zk_evm/blob/677dc0dc066d15209773ce1e7c990df8a845da98/evm_arithmetization/src/logic.rs#L310).
-pub(crate) fn eval<P: PackedField>(lv: &LogicCols<P>, cc: &mut ConstraintConsumer<P>) {
+pub(crate) fn eval<P: PackedField>(lv: &BitCols<P>, cc: &mut ConstraintConsumer<P>) {
     let f_and = lv.op.f_and;
     let f_xor = lv.op.f_xor;
     let f_or = lv.op.f_or;
@@ -45,7 +45,7 @@ pub(crate) fn eval<P: PackedField>(lv: &LogicCols<P>, cc: &mut ConstraintConsume
 
 pub(crate) fn eval_circuit<F: RichField + Extendable<D>, const D: usize>(
     cb: &mut CircuitBuilder<F, D>,
-    lv: &LogicCols<ExtensionTarget<D>>,
+    lv: &BitCols<ExtensionTarget<D>>,
     cc: &mut RecursiveConstraintConsumer<F, D>,
 ) {
     //TODO

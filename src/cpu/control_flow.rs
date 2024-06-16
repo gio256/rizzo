@@ -11,7 +11,7 @@ use crate::cpu::columns::{CpuCols, CPU_COL_MAP};
 
 const INC_PC_OPS: [usize; 10] = [
     CPU_COL_MAP.op.f_arith,
-    CPU_COL_MAP.op.f_logic,
+    CPU_COL_MAP.op.f_bits,
     CPU_COL_MAP.op.f_lw,
     CPU_COL_MAP.op.f_lh,
     CPU_COL_MAP.op.f_lb,

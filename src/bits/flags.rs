@@ -6,9 +6,9 @@ use plonky2::iop::ext_target::ExtensionTarget;
 use plonky2::plonk::circuit_builder::CircuitBuilder;
 use starky::constraint_consumer::{ConstraintConsumer, RecursiveConstraintConsumer};
 
-use crate::logic::columns::{LogicCols, LOGIC_COL_MAP};
+use crate::bits::columns::{BitCols, BIT_COL_MAP};
 
-pub(crate) fn eval<P: PackedField>(lv: &LogicCols<P>, cc: &mut ConstraintConsumer<P>) {
+pub(crate) fn eval<P: PackedField>(lv: &BitCols<P>, cc: &mut ConstraintConsumer<P>) {
     // flags in {0, 1}
     for flag in *lv.op {
         cc.constraint (flag * (flag - P::ONES));
@@ -29,7 +29,7 @@ pub(crate) fn eval<P: PackedField>(lv: &LogicCols<P>, cc: &mut ConstraintConsume
 
 pub(crate) fn eval_circuit<F: RichField + Extendable<D>, const D: usize>(
     cb: &mut CircuitBuilder<F, D>,
-    lv: &LogicCols<ExtensionTarget<D>>,
+    lv: &BitCols<ExtensionTarget<D>>,
     cc: &mut RecursiveConstraintConsumer<F, D>,
 ) {
     //TODO

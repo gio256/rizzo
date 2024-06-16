@@ -10,19 +10,19 @@ use starky::stark::Stark;
 
 use crate::cpu::columns::N_MEM_CHANNELS;
 use crate::pack::N_BYTES;
-use crate::{arith, cpu, logic, mem, pack};
+use crate::{arith, cpu, bits, mem, pack};
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub enum Table {
     Arith,
-    Logic,
+    Bits,
     Cpu,
     Mem,
     Pack,
 }
 
 fn all_cross_table_lookups<F: Field>() -> Vec<CrossTableLookup<F>> {
-    vec![ctl_arith(), ctl_logic(), ctl_byte_packing(), ctl_mem()]
+    vec![ctl_arith(), ctl_bits(), ctl_byte_packing(), ctl_mem()]
 }
 
 fn ctl_arith<F: Field>() -> CrossTableLookup<F> {
@@ -36,12 +36,12 @@ fn ctl_arith<F: Field>() -> CrossTableLookup<F> {
 }
 
 //TODO: add ctl_looked_shift as looked table. [#1575](https://github.com/0xPolygonZero/plonky2/pull/1575)
-fn ctl_logic<F: Field>() -> CrossTableLookup<F> {
+fn ctl_bits<F: Field>() -> CrossTableLookup<F> {
     let looking = vec![
-        cpu::stark::ctl_looking_logic_reg(),
-        cpu::stark::ctl_looking_logic_imm(),
+        cpu::stark::ctl_looking_bits_reg(),
+        cpu::stark::ctl_looking_bits_imm(),
     ];
-    let looked = logic::stark::ctl_looked_logic();
+    let looked = bits::stark::ctl_looked_logic();
     CrossTableLookup::new(looking, looked)
 }
 

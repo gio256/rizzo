@@ -83,24 +83,24 @@ pub(crate) fn ctl_looking_arith_imm<F: Field>() -> TableWithColumns<F> {
 }
 
 /// Looking table cpu->logic.
-pub(crate) fn ctl_looking_logic_reg<F: Field>() -> TableWithColumns<F> {
+pub(crate) fn ctl_looking_bits_reg<F: Field>() -> TableWithColumns<F> {
     let cols = ctl_binop_reg();
 
     let f_not_imm =
         Column::linear_combination_with_constant(vec![(CPU_COL_MAP.f_imm, F::NEG_ONE)], F::ONE);
-    let f_logic = Column::single(CPU_COL_MAP.op.f_logic);
-    let filter = Filter::new(vec![(f_not_imm, f_logic)], vec![]);
+    let f_bits = Column::single(CPU_COL_MAP.op.f_bits);
+    let filter = Filter::new(vec![(f_not_imm, f_bits)], vec![]);
 
     TableWithColumns::new(Table::Cpu as usize, cols, filter)
 }
 
-/// Looking table cpu->logic.
-pub(crate) fn ctl_looking_logic_imm<F: Field>() -> TableWithColumns<F> {
+/// Looking table cpu->bits.
+pub(crate) fn ctl_looking_bits_imm<F: Field>() -> TableWithColumns<F> {
     let cols = ctl_binop_imm();
 
     let f_imm = Column::single(CPU_COL_MAP.f_imm);
-    let f_logic = Column::single(CPU_COL_MAP.op.f_logic);
-    let filter = Filter::new(vec![(f_imm, f_logic)], vec![]);
+    let f_bits = Column::single(CPU_COL_MAP.op.f_bits);
+    let filter = Filter::new(vec![(f_imm, f_bits)], vec![]);
 
     TableWithColumns::new(Table::Cpu as usize, cols, filter)
 }

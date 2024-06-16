@@ -33,7 +33,7 @@ pub(crate) const N_OP_COLS: usize = core::mem::size_of::<OpCols<u8>>();
 #[derive(Clone, Eq, PartialEq, Debug)]
 pub(crate) struct OpCols<T> {
     pub f_arith: T,
-    pub f_logic: T,
+    pub f_bits: T,
     pub f_lw: T,
     pub f_lh: T,
     pub f_lb: T,

@@ -7,7 +7,7 @@ use plonky2::plonk::circuit_builder::CircuitBuilder;
 use starky::constraint_consumer::{ConstraintConsumer, RecursiveConstraintConsumer};
 
 use crate::util::felt_from_le_bits;
-use crate::logic::columns::{LogicCols, WORD_BITS};
+use crate::bits::columns::{BitCols, WORD_BITS};
 
 /// Logical shift towards the most significant bit.
 fn sll<P: PackedField>(bits: &[P; WORD_BITS], shift_amt: &[P; WORD_BITS]) -> P {
@@ -79,7 +79,7 @@ fn sra_ext<P: PackedField>(bits: &[P; WORD_BITS], shift_amt: &[P; WORD_BITS]) ->
 
 /// Constraints for AND, OR, and XOR from
 /// [zk_evm](https://github.com/0xPolygonZero/zk_evm/blob/677dc0dc066d15209773ce1e7c990df8a845da98/evm_arithmetization/src/logic.rs#L310).
-pub(crate) fn eval<P: PackedField>(lv: &LogicCols<P>, cc: &mut ConstraintConsumer<P>) {
+pub(crate) fn eval<P: PackedField>(lv: &BitCols<P>, cc: &mut ConstraintConsumer<P>) {
     let f_sll = lv.op.f_sll;
     let f_srl = lv.op.f_srl;
     let f_sra = lv.op.f_sra;
@@ -101,7 +101,7 @@ pub(crate) fn eval<P: PackedField>(lv: &LogicCols<P>, cc: &mut ConstraintConsume
 
 pub(crate) fn eval_circuit<F: RichField + Extendable<D>, const D: usize>(
     cb: &mut CircuitBuilder<F, D>,
-    lv: &LogicCols<ExtensionTarget<D>>,
+    lv: &BitCols<ExtensionTarget<D>>,
     cc: &mut RecursiveConstraintConsumer<F, D>,
 ) {
     //TODO
