@@ -1,9 +1,13 @@
 use core::borrow::{Borrow, BorrowMut};
 use core::ops::{Deref, DerefMut, Index, IndexMut};
 
-/// The value of each field is the index of the corresponding column.
+/// The value of each struct field is the index of the corresponding column.
 pub(crate) const ARITH_COL_MAP: ArithCols<usize> = make_col_map();
+/// The value of each struct field is the index of the corresponding column.
+pub(crate) const OP_COL_MAP: OpCols<usize> = make_op_col_map();
+/// The number of field elements in `ArithCols`.
 pub(crate) const N_ARITH_COLS: usize = core::mem::size_of::<ArithCols<u8>>();
+/// The number of field elements in `OpCols`.
 pub(crate) const N_OP_COLS: usize = core::mem::size_of::<OpCols<u8>>();
 
 /// Flag columns for the operation to perform.

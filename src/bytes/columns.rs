@@ -3,9 +3,11 @@ use core::ops::{Deref, DerefMut, Index, IndexMut};
 
 use crate::bytes::BYTES_WORD;
 
-/// The value of each field is the index of the corresponding column.
+/// The value of each struct field is the index of the corresponding column.
 pub(crate) const BYTE_COL_MAP: ByteCols<usize> = make_col_map();
+/// The number of field elements in `ByteCols`.
 pub(crate) const N_BYTE_COLS: usize = core::mem::size_of::<ByteCols<u8>>();
+
 const BITS_U8: usize = 8;
 
 /// Range checking columns.

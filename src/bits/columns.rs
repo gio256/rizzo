@@ -6,10 +6,13 @@ use static_assertions::const_assert;
 
 pub(crate) const WORD_BITS: usize = 32;
 
-/// The value of each field is the index of the corresponding column.
+/// The value of each struct field is the index of the corresponding column.
 pub(crate) const BIT_COL_MAP: BitCols<usize> = make_col_map();
-pub(crate) const N_BIT_COLS: usize = core::mem::size_of::<BitCols<u8>>();
+/// The value of each struct field is the index of the corresponding column.
 pub(crate) const OP_COL_MAP: OpCols<usize> = make_op_col_map();
+/// The number of field elements in `BitCols`.
+pub(crate) const N_BIT_COLS: usize = core::mem::size_of::<BitCols<u8>>();
+/// The number of field elements in `OpCols`.
 pub(crate) const N_OP_COLS: usize = core::mem::size_of::<OpCols<u8>>();
 
 /// Flag columns for the operation to perform.
