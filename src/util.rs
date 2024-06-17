@@ -103,7 +103,6 @@ macro_rules! impl_stark_no_ctls {
                     self.0.eval_ext(frame, cc)
                 }
 
-
                 fn eval_ext_circuit(
                     &self,
                     cb: &mut ::plonky2::plonk::circuit_builder::CircuitBuilder<F, D>,
@@ -123,29 +122,6 @@ macro_rules! impl_stark_no_ctls {
 
                 fn num_quotient_polys(&self, cfg: &::starky::config::StarkConfig) -> usize {
                     self.0.num_quotient_polys(cfg)
-                }
-
-                fn fri_instance(
-                    &self,
-                    zeta: <F as ::plonky2::field::extension::Extendable<D>>::Extension,
-                    g: F,
-                    num_ctl_helpers: usize,
-                    num_ctl_zs: Vec<usize>,
-                    cfg: &::starky::config::StarkConfig,
-                ) -> ::plonky2::fri::structure::FriInstanceInfo<F, D> {
-                    self.0.fri_instance(zeta, g, num_ctl_helpers, num_ctl_zs, cfg)
-                }
-
-                fn fri_instance_target(
-                    &self,
-                    cb: &mut ::plonky2::plonk::circuit_builder::CircuitBuilder<F, D>,
-                    zeta: ::plonky2::iop::ext_target::ExtensionTarget<D>,
-                    g: F,
-                    num_ctl_helper_polys: usize,
-                    num_ctl_zs: usize,
-                    cfg: &::starky::config::StarkConfig,
-                ) -> ::plonky2::fri::structure::FriInstanceInfoTarget<D> {
-                    self.0.fri_instance_target(cb, zeta, g, num_ctl_helper_polys, num_ctl_zs, cfg)
                 }
 
                 fn lookups(&self) -> Vec<::starky::lookup::Lookup<F>> {
