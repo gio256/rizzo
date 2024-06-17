@@ -10,8 +10,9 @@ use starky::constraint_consumer::{ConstraintConsumer, RecursiveConstraintConsume
 use crate::bits::columns::{BitCols, BIT_COL_MAP};
 use crate::util::felt_from_le_bits;
 
-/// Constraints for AND, OR, and XOR from
-/// [zk_evm](https://github.com/0xPolygonZero/zk_evm/blob/677dc0dc066d15209773ce1e7c990df8a845da98/evm_arithmetization/src/logic.rs#L310).
+/// Constraints for AND, OR, and XOR from [zk_evm].
+///
+/// [zk_evm]: https://github.com/0xPolygonZero/zk_evm/blob/677dc0dc066d15209773ce1e7c990df8a845da98/evm_arithmetization/src/logic.rs#L310
 pub(crate) fn eval<P: PackedField>(lv: &BitCols<P>, cc: &mut ConstraintConsumer<P>) {
     let f_and = lv.op.f_and;
     let f_xor = lv.op.f_xor;

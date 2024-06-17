@@ -74,7 +74,7 @@ pub(crate) fn generate<F: PrimeField64>(
 
 /// See [zkevm] for more on the signed comparison method used here.
 ///
-/// [zkevm](https://github.com/0xPolygonZero/zk_evm/blob/e8e60717efd5eadc6d84d8c59902f40806d7c770/evm_arithmetization/src/cpu/kernel/asm/signed.asm#L156-L161)
+/// [zkevm]: https://github.com/0xPolygonZero/zk_evm/blob/e8e60717efd5eadc6d84d8c59902f40806d7c770/evm_arithmetization/src/cpu/kernel/asm/signed.asm#L156-L161
 pub(crate) fn eval<P: PackedField>(lv: &ArithCols<P>, cc: &mut ConstraintConsumer<P>) {
     let in0 = lv.in0;
     let in1 = lv.in1;

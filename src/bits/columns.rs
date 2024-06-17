@@ -9,11 +9,12 @@ pub(crate) const WORD_BITS: usize = 32;
 /// The value of each field is the index of the corresponding column.
 pub(crate) const BIT_COL_MAP: BitCols<usize> = make_col_map();
 pub(crate) const N_BIT_COLS: usize = core::mem::size_of::<BitCols<u8>>();
+pub(crate) const OP_COL_MAP: OpCols<usize> = make_op_col_map();
 pub(crate) const N_OP_COLS: usize = core::mem::size_of::<OpCols<u8>>();
 
 /// Flag columns for the operation to perform.
 #[repr(C)]
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Default)]
 pub(crate) struct OpCols<T: Copy> {
     pub f_and: T,
     pub f_xor: T,
@@ -25,7 +26,7 @@ pub(crate) struct OpCols<T: Copy> {
 
 /// Columns for the bit stark.
 #[repr(C)]
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Default)]
 pub(crate) struct BitCols<T: Copy> {
     /// The operation to perform.
     pub op: OpCols<T>,
@@ -39,9 +40,20 @@ pub(crate) struct BitCols<T: Copy> {
     pub and: T,
 }
 
+impl<T: Copy> BitCols<T> {
+    pub(crate) fn to_vec(&self) -> Vec<T> {
+        Borrow::<[T; N_BIT_COLS]>::borrow(self).to_vec()
+    }
+}
+
 const fn make_col_map() -> BitCols<usize> {
     let arr = crate::util::indices_arr::<N_BIT_COLS>();
     unsafe { core::mem::transmute::<[usize; N_BIT_COLS], BitCols<usize>>(arr) }
+}
+
+const fn make_op_col_map() -> OpCols<usize> {
+    let arr = crate::util::indices_arr::<N_OP_COLS>();
+    unsafe { core::mem::transmute::<[usize; N_OP_COLS], OpCols<usize>>(arr) }
 }
 
 impl<T: Copy> Borrow<BitCols<T>> for [T; N_BIT_COLS] {

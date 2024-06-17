@@ -133,10 +133,16 @@ impl<F: RichField + Extendable<D>, const D: usize> Stark<F, D> for BitStark<F, D
 mod tests {
     use plonky2::field::types::{Field, PrimeField64, Sample};
     use plonky2::plonk::config::{GenericConfig, PoseidonGoldilocksConfig};
+    use plonky2::util::timing::TimingTree;
     use rand::Rng;
+    use starky::config::StarkConfig;
+    use starky::prover::prove;
     use starky::stark_testing::{test_stark_circuit_constraints, test_stark_low_degree};
+    use starky::verifier::verify_stark_proof;
 
     use super::BitStark;
+    use crate::bits::columns::WORD_BITS;
+    use crate::bits::trace::{gen_trace, BitOp, Op};
 
     const D: usize = 2;
     type C = PoseidonGoldilocksConfig;
@@ -154,4 +160,27 @@ mod tests {
     //     let stark: S = Default::default();
     //     test_stark_circuit_constraints::<F, C, S, D>(stark).unwrap();
     // }
+
+    #[test]
+    fn test_gen_eval() {
+        crate::util::impl_stark_no_ctls!(BitStark);
+        type S = BitStarkNoCtls<F, D>;
+        const CFG: StarkConfig = StarkConfig::standard_fast_config();
+        let mut rng = rand::thread_rng();
+
+        let stark: S = Default::default();
+        let ops = vec![
+            BitOp::new(Op::AND, rng.gen(), rng.gen()),
+            BitOp::new(Op::OR, rng.gen(), rng.gen()),
+            BitOp::new(Op::XOR, rng.gen(), rng.gen()),
+            BitOp::new(Op::SLL, rng.gen(), rng.gen_range(0..WORD_BITS as u32)),
+            BitOp::new(Op::SRL, rng.gen(), rng.gen_range(0..WORD_BITS as u32)),
+            BitOp::new(Op::SRA, rng.gen(), rng.gen_range(0..WORD_BITS as u32)),
+        ];
+        let min_rows = CFG.fri_config.num_cap_elements();
+        let trace = gen_trace::<F>(ops, min_rows);
+        let mut t = TimingTree::default();
+        let proof = prove::<F, C, S, D>(stark, &CFG, trace, &[], &mut t).unwrap();
+        verify_stark_proof(stark, proof, &CFG).unwrap();
+    }
 }
