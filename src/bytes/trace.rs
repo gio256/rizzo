@@ -96,8 +96,8 @@ pub(crate) fn gen_trace<F: RichField>(
 }
 
 fn gen_trace_rows<F: RichField>(mut ops: Vec<ByteOp>, min_rows: usize) -> Vec<ByteCols<F>> {
-    let ops_len = ops.iter().filter(|op| !op.bytes.is_empty()).count();
-    let n_rows = max(max(ops_len, u8::MAX.into()), min_rows).next_power_of_two();
+    let n_ops = ops.iter().filter(|op| !op.bytes.is_empty()).count();
+    let n_rows = max(max(n_ops, u8::MAX.into()), min_rows).next_power_of_two();
 
     // generate rows from nonempty byte packing ops
     let mut rc_freq = HashMap::default();
@@ -106,14 +106,12 @@ fn gen_trace_rows<F: RichField>(mut ops: Vec<ByteOp>, min_rows: usize) -> Vec<By
         .filter(|op| !op.bytes.is_empty())
         .enumerate()
         .map(|(i, op)| op.into_row(&mut rc_freq, i))
+        .chain((n_ops..n_rows).map(padding_row))
         .collect();
 
     // account for padding rows in range check frequencies
     let pad_freq = rc_freq.entry(0).or_insert(0);
-    *pad_freq += BYTES_WORD * n_rows.saturating_sub(ops_len);
-
-    // extend with padding rows
-    rows.extend((ops_len..n_rows).map(padding_row));
+    *pad_freq += BYTES_WORD * n_rows.saturating_sub(n_ops);
 
     // write range check frequencies column
     for (val, freq) in rc_freq {
