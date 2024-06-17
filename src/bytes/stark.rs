@@ -15,53 +15,53 @@ use starky::lookup::{Column, Filter, Lookup};
 use starky::stark::Stark;
 
 use crate::arith::addcy::eval_sub;
-use crate::pack::columns::{PackCols, N_PACK_COLS, PACK_COL_MAP};
-use crate::pack::N_BYTES;
+use crate::bytes::columns::{ByteCols, BYTE_COL_MAP, N_BYTE_COLS};
+use crate::bytes::BYTES_WORD;
 use crate::stark::Table;
 
 pub(crate) fn ctl_looked<F: Field>() -> TableWithColumns<F> {
-    let len_comb = PACK_COL_MAP
+    let len_comb = BYTE_COL_MAP
         .len_idx
         .into_iter()
         .enumerate()
         .map(|(i, col)| (col, F::from_canonical_usize(i + 1)));
     let len = Column::linear_combination(len_comb);
 
-    let f_rw = Column::single(PACK_COL_MAP.f_rw);
-    let f_signed = Column::single(PACK_COL_MAP.f_signed);
-    let adr_virt = Column::single(PACK_COL_MAP.adr_virt);
-    let packed = Column::le_bytes(PACK_COL_MAP.bytes);
-    let time = Column::single(PACK_COL_MAP.time);
+    let f_rw = Column::single(BYTE_COL_MAP.f_rw);
+    let f_signed = Column::single(BYTE_COL_MAP.f_signed);
+    let adr_virt = Column::single(BYTE_COL_MAP.adr_virt);
+    let val = Column::le_bytes(BYTE_COL_MAP.bytes);
+    let time = Column::single(BYTE_COL_MAP.time);
 
-    let cols = vec![f_rw, f_signed, adr_virt, len, packed, time];
-    let filter = Filter::new_simple(Column::sum(PACK_COL_MAP.len_idx));
-    TableWithColumns::new(Table::Pack as usize, cols, filter)
+    let cols = vec![f_rw, f_signed, adr_virt, len, val, time];
+    let filter = Filter::new_simple(Column::sum(BYTE_COL_MAP.len_idx));
+    TableWithColumns::new(Table::Bytes as usize, cols, filter)
 }
 
 pub(crate) fn ctl_looking_mem<F: Field>(i: usize) -> TableWithColumns<F> {
     // `virtual_address_col = adr_virt + len - 1 - i`
-    let len_sub1_comb = PACK_COL_MAP
+    let len_sub1_comb = BYTE_COL_MAP
         .len_idx
         .into_iter()
         .enumerate()
         .map(|(i, col)| (col, F::from_canonical_usize(i)));
-    let adr_virt_comb = once((PACK_COL_MAP.adr_virt, F::ONE)).chain(len_sub1_comb);
+    let adr_virt_comb = once((BYTE_COL_MAP.adr_virt, F::ONE)).chain(len_sub1_comb);
     let adr_virt = Column::linear_combination_with_constant(
         adr_virt_comb,
         F::NEG_ONE * F::from_canonical_usize(i),
     );
 
-    let f_rw = Column::single(PACK_COL_MAP.f_rw);
+    let f_rw = Column::single(BYTE_COL_MAP.f_rw);
     let adr_seg = Column::constant(F::ONE);
-    let byte = Column::single(PACK_COL_MAP.bytes[i]);
-    let time = Column::single(PACK_COL_MAP.time);
+    let byte = Column::single(BYTE_COL_MAP.bytes[i]);
+    let time = Column::single(BYTE_COL_MAP.time);
 
     let cols = vec![f_rw, adr_seg, adr_virt, byte, time];
-    let filter = Filter::new_simple(Column::sum(&PACK_COL_MAP.len_idx[i..]));
-    TableWithColumns::new(Table::Pack as usize, cols, filter)
+    let filter = Filter::new_simple(Column::sum(&BYTE_COL_MAP.len_idx[i..]));
+    TableWithColumns::new(Table::Bytes as usize, cols, filter)
 }
 
-fn eval_all<P: PackedField>(lv: &PackCols<P>, nv: &PackCols<P>, cc: &mut ConstraintConsumer<P>) {
+fn eval_all<P: PackedField>(lv: &ByteCols<P>, nv: &ByteCols<P>, cc: &mut ConstraintConsumer<P>) {
     // filter in {0, 1} and starts at 1
     let filter: P = lv.len_idx.into_iter().sum();
     cc.constraint(filter * (filter - P::ONES));
@@ -131,25 +131,25 @@ fn eval_all<P: PackedField>(lv: &PackCols<P>, nv: &PackCols<P>, cc: &mut Constra
 
 fn eval_all_circuit<F: RichField + Extendable<D>, const D: usize>(
     cb: &mut CircuitBuilder<F, D>,
-    lv: &PackCols<ExtensionTarget<D>>,
-    nv: &PackCols<ExtensionTarget<D>>,
+    lv: &ByteCols<ExtensionTarget<D>>,
+    nv: &ByteCols<ExtensionTarget<D>>,
     cc: &mut RecursiveConstraintConsumer<F, D>,
 ) {
     todo!()
 }
 
 #[derive(Clone, Copy, Default)]
-pub struct PackStark<F, const D: usize> {
+pub struct ByteStark<F, const D: usize> {
     _unused: PhantomData<F>,
 }
 
-impl<F: RichField + Extendable<D>, const D: usize> Stark<F, D> for PackStark<F, D> {
-    type EvaluationFrame<FE, P, const D2: usize> = StarkFrame<P, P::Scalar, N_PACK_COLS, 0>
+impl<F: RichField + Extendable<D>, const D: usize> Stark<F, D> for ByteStark<F, D> {
+    type EvaluationFrame<FE, P, const D2: usize> = StarkFrame<P, P::Scalar, N_BYTE_COLS, 0>
     where
         FE: FieldExtension<D2, BaseField = F>,
         P: PackedField<Scalar = FE>;
 
-    type EvaluationFrameTarget = StarkFrame<ExtensionTarget<D>, ExtensionTarget<D>, N_PACK_COLS, 0>;
+    type EvaluationFrameTarget = StarkFrame<ExtensionTarget<D>, ExtensionTarget<D>, N_BYTE_COLS, 0>;
 
     fn eval_packed_generic<FE, P, const D2: usize>(
         &self,
@@ -159,10 +159,10 @@ impl<F: RichField + Extendable<D>, const D: usize> Stark<F, D> for PackStark<F, 
         FE: FieldExtension<D2, BaseField = F>,
         P: PackedField<Scalar = FE>,
     {
-        let local: &[P; N_PACK_COLS] = frame.get_local_values().try_into().unwrap();
-        let local: &PackCols<P> = local.borrow();
-        let next: &[P; N_PACK_COLS] = frame.get_next_values().try_into().unwrap();
-        let next: &PackCols<P> = next.borrow();
+        let local: &[P; N_BYTE_COLS] = frame.get_local_values().try_into().unwrap();
+        let local: &ByteCols<P> = local.borrow();
+        let next: &[P; N_BYTE_COLS] = frame.get_next_values().try_into().unwrap();
+        let next: &ByteCols<P> = next.borrow();
         eval_all(local, next, cc)
     }
 
@@ -172,11 +172,11 @@ impl<F: RichField + Extendable<D>, const D: usize> Stark<F, D> for PackStark<F, 
         frame: &Self::EvaluationFrameTarget,
         cc: &mut RecursiveConstraintConsumer<F, D>,
     ) {
-        let local: &[ExtensionTarget<D>; N_PACK_COLS] =
+        let local: &[ExtensionTarget<D>; N_BYTE_COLS] =
             frame.get_local_values().try_into().unwrap();
-        let local: &PackCols<ExtensionTarget<D>> = local.borrow();
-        let next: &[ExtensionTarget<D>; N_PACK_COLS] = frame.get_next_values().try_into().unwrap();
-        let next: &PackCols<ExtensionTarget<D>> = next.borrow();
+        let local: &ByteCols<ExtensionTarget<D>> = local.borrow();
+        let next: &[ExtensionTarget<D>; N_BYTE_COLS] = frame.get_next_values().try_into().unwrap();
+        let next: &ByteCols<ExtensionTarget<D>> = next.borrow();
         eval_all_circuit(cb, local, next, cc);
     }
 
@@ -186,10 +186,10 @@ impl<F: RichField + Extendable<D>, const D: usize> Stark<F, D> for PackStark<F, 
 
     fn lookups(&self) -> Vec<Lookup<F>> {
         vec![Lookup {
-            columns: Column::singles(PACK_COL_MAP.bytes).collect(),
-            table_column: Column::single(PACK_COL_MAP.range_check.count),
-            frequencies_column: Column::single(PACK_COL_MAP.range_check.freq),
-            filter_columns: vec![Default::default(); N_BYTES],
+            columns: Column::singles(BYTE_COL_MAP.bytes).collect(),
+            table_column: Column::single(BYTE_COL_MAP.range_check.count),
+            frequencies_column: Column::single(BYTE_COL_MAP.range_check.freq),
+            filter_columns: vec![Default::default(); BYTES_WORD],
         }]
     }
 
@@ -207,13 +207,13 @@ mod tests {
     use starky::stark_testing::{test_stark_circuit_constraints, test_stark_low_degree};
     use starky::verifier::verify_stark_proof;
 
-    use super::PackStark;
-    use crate::pack::trace::{gen_trace, PackOp};
+    use super::ByteStark;
+    use crate::bytes::trace::{gen_trace, ByteOp};
 
     const D: usize = 2;
     type C = PoseidonGoldilocksConfig;
     type F = <C as GenericConfig<D>>::F;
-    type S = PackStark<F, D>;
+    type S = ByteStark<F, D>;
 
     #[test]
     fn test_stark_degree() {
@@ -229,27 +229,27 @@ mod tests {
 
     #[test]
     fn test_gen_eval() {
-        crate::util::impl_stark_no_ctls!(PackStark);
-        type S = PackStarkNoCtls<F, D>;
+        crate::util::impl_stark_no_ctls!(ByteStark);
+        type S = ByteStarkNoCtls<F, D>;
         const CFG: StarkConfig = StarkConfig::standard_fast_config();
 
         let stark: S = Default::default();
         let ops = vec![
-            PackOp {
+            ByteOp {
                 rw: true,
                 signed: false,
                 adr_virt: 20,
                 time: 1,
                 bytes: vec![0xab, 0xbe, 0xef],
             },
-            PackOp {
+            ByteOp {
                 rw: false,
                 signed: true,
                 adr_virt: 50,
                 time: 2,
                 bytes: vec![0xab, 0xbe, 0xef],
             },
-            PackOp {
+            ByteOp {
                 rw: true,
                 signed: false,
                 adr_virt: 100,

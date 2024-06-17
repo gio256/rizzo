@@ -8,21 +8,21 @@ use starky::cross_table_lookup::{CrossTableLookup, TableIdx, TableWithColumns};
 use starky::evaluation_frame::StarkFrame;
 use starky::stark::Stark;
 
+use crate::bytes::BYTES_WORD;
 use crate::cpu::columns::N_MEM_CHANNELS;
-use crate::pack::N_BYTES;
-use crate::{arith, cpu, bits, mem, pack};
+use crate::{arith, bits, bytes, cpu, mem};
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub enum Table {
     Arith,
     Bits,
+    Bytes,
     Cpu,
     Mem,
-    Pack,
 }
 
 fn all_cross_table_lookups<F: Field>() -> Vec<CrossTableLookup<F>> {
-    vec![ctl_arith(), ctl_bits(), ctl_byte_packing(), ctl_mem()]
+    vec![ctl_arith(), ctl_bits(), ctl_bytes(), ctl_mem()]
 }
 
 fn ctl_arith<F: Field>() -> CrossTableLookup<F> {
@@ -45,19 +45,19 @@ fn ctl_bits<F: Field>() -> CrossTableLookup<F> {
     CrossTableLookup::new(looking, looked)
 }
 
-fn ctl_byte_packing<F: Field>() -> CrossTableLookup<F> {
+fn ctl_bytes<F: Field>() -> CrossTableLookup<F> {
     let looking = vec![
-        cpu::stark::ctl_looking_pack(),
-        cpu::stark::ctl_looking_unpack(),
+        cpu::stark::ctl_looking_read_bytes(),
+        cpu::stark::ctl_looking_write_bytes(),
     ];
-    let looked = pack::stark::ctl_looked();
+    let looked = bytes::stark::ctl_looked();
     CrossTableLookup::new(looking, looked)
 }
 
 fn ctl_mem<F: Field>() -> CrossTableLookup<F> {
     let cpu = (0..N_MEM_CHANNELS).map(cpu::stark::ctl_looking_mem);
-    let pack = (0..N_BYTES).map(pack::stark::ctl_looking_mem);
-    let looking = cpu.chain(pack).collect();
+    let bytes = (0..BYTES_WORD).map(bytes::stark::ctl_looking_mem);
+    let looking = cpu.chain(bytes).collect();
     let looked = mem::stark::ctl_looked();
     CrossTableLookup::new(looking, looked)
 }

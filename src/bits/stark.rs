@@ -16,7 +16,7 @@ use starky::lookup::{Column, Filter};
 use starky::stark::Stark;
 
 use crate::bits::columns::{BitCols, BIT_COL_MAP, N_BIT_COLS, WORD_BITS};
-use crate::bits::{logic, flags, shift};
+use crate::bits::{flags, logic, shift};
 use crate::stark::Table;
 use crate::util::{felt_from_le_bits, fst};
 use crate::vm::opcode::Opcode;
@@ -90,8 +90,7 @@ impl<F: RichField + Extendable<D>, const D: usize> Stark<F, D> for BitStark<F, D
         FE: FieldExtension<D2, BaseField = F>,
         P: PackedField<Scalar = FE>;
 
-    type EvaluationFrameTarget =
-        StarkFrame<ExtensionTarget<D>, ExtensionTarget<D>, N_BIT_COLS, 0>;
+    type EvaluationFrameTarget = StarkFrame<ExtensionTarget<D>, ExtensionTarget<D>, N_BIT_COLS, 0>;
 
     fn eval_packed_generic<FE, P, const D2: usize>(
         &self,
@@ -114,8 +113,7 @@ impl<F: RichField + Extendable<D>, const D: usize> Stark<F, D> for BitStark<F, D
         frame: &Self::EvaluationFrameTarget,
         cc: &mut RecursiveConstraintConsumer<F, D>,
     ) {
-        let local: &[ExtensionTarget<D>; N_BIT_COLS] =
-            frame.get_local_values().try_into().unwrap();
+        let local: &[ExtensionTarget<D>; N_BIT_COLS] = frame.get_local_values().try_into().unwrap();
         let local: &BitCols<ExtensionTarget<D>> = local.borrow();
         let next: &[ExtensionTarget<D>; N_BIT_COLS] = frame.get_next_values().try_into().unwrap();
         let next: &BitCols<ExtensionTarget<D>> = next.borrow();

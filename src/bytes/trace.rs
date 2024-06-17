@@ -18,13 +18,13 @@ use starky::evaluation_frame::{StarkEvaluationFrame, StarkFrame};
 use starky::lookup::{Column, Filter, Lookup};
 use starky::stark::Stark;
 
+use crate::bytes::columns::{ByteCols, RangeCheck, BYTE_COL_MAP, N_BYTE_COLS};
+use crate::bytes::BYTES_WORD;
 use crate::iter::{windows_mut, LendIter};
-use crate::pack::columns::{PackCols, RangeCheck, N_PACK_COLS, PACK_COL_MAP};
-use crate::pack::N_BYTES;
 use crate::stark::Table;
 
 #[derive(Clone, Debug)]
-pub(crate) struct PackOp {
+pub(crate) struct ByteOp {
     pub rw: bool,
     pub signed: bool,
     pub adr_virt: u32,
@@ -32,9 +32,9 @@ pub(crate) struct PackOp {
     pub bytes: Vec<u8>,
 }
 
-impl PackOp {
-    fn into_row<F: Field>(self, map: &mut HashMap<u8, usize>, index: usize) -> PackCols<F> {
-        let mut row = PackCols {
+impl ByteOp {
+    fn into_row<F: Field>(self, map: &mut HashMap<u8, usize>, index: usize) -> ByteCols<F> {
+        let mut row = ByteCols {
             f_rw: F::from_bool(self.rw),
             f_signed: F::from_bool(self.signed),
             adr_virt: F::from_canonical_u32(self.adr_virt),
@@ -48,7 +48,7 @@ impl PackOp {
 
         // set index at length of bytes
         let len = self.bytes.len();
-        debug_assert!(len > 0 && len <= N_BYTES);
+        debug_assert!(len > 0 && len <= BYTES_WORD);
         row.len_idx[len - 1] = F::ONE;
 
         // self.bytes is big-endian
@@ -72,7 +72,7 @@ impl PackOp {
             .into_iter()
             .rev()
             .chain(repeat(ext_byte))
-            .take(N_BYTES)
+            .take(BYTES_WORD)
             .map(|b| {
                 let freq = map.entry(b).or_insert(0);
                 *freq += 1;
@@ -86,22 +86,22 @@ impl PackOp {
 }
 
 pub(crate) fn gen_trace<F: RichField>(
-    mut ops: Vec<PackOp>,
+    mut ops: Vec<ByteOp>,
     min_rows: usize,
 ) -> Vec<PolynomialValues<F>> {
     let trace = gen_trace_rows(ops, min_rows);
-    let trace_rows: Vec<_> = trace.iter().map(PackCols::to_vec).collect();
+    let trace_rows: Vec<_> = trace.iter().map(ByteCols::to_vec).collect();
     let trace_cols = transpose(&trace_rows);
     trace_cols.into_iter().map(PolynomialValues::new).collect()
 }
 
-fn gen_trace_rows<F: RichField>(mut ops: Vec<PackOp>, min_rows: usize) -> Vec<PackCols<F>> {
+fn gen_trace_rows<F: RichField>(mut ops: Vec<ByteOp>, min_rows: usize) -> Vec<ByteCols<F>> {
     let ops_len = ops.iter().filter(|op| !op.bytes.is_empty()).count();
     let n_rows = max(max(ops_len, u8::MAX.into()), min_rows).next_power_of_two();
 
-    // generate rows from nonempty packing ops
+    // generate rows from nonempty byte packing ops
     let mut rc_freq = HashMap::default();
-    let mut rows: Vec<PackCols<F>> = ops
+    let mut rows: Vec<ByteCols<F>> = ops
         .into_iter()
         .filter(|op| !op.bytes.is_empty())
         .enumerate()
@@ -110,7 +110,7 @@ fn gen_trace_rows<F: RichField>(mut ops: Vec<PackOp>, min_rows: usize) -> Vec<Pa
 
     // account for padding rows in range check frequencies
     let pad_freq = rc_freq.entry(0).or_insert(0);
-    *pad_freq += N_BYTES * n_rows.saturating_sub(ops_len);
+    *pad_freq += BYTES_WORD * n_rows.saturating_sub(ops_len);
 
     // extend with padding rows
     rows.extend((ops_len..n_rows).map(padding_row));
@@ -122,8 +122,8 @@ fn gen_trace_rows<F: RichField>(mut ops: Vec<PackOp>, min_rows: usize) -> Vec<Pa
     rows
 }
 
-fn padding_row<F: Field>(index: usize) -> PackCols<F> {
-    PackCols {
+fn padding_row<F: Field>(index: usize) -> ByteCols<F> {
+    ByteCols {
         range_check: RangeCheck {
             count: rc_count(index),
             ..Default::default()

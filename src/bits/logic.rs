@@ -7,8 +7,8 @@ use plonky2::iop::ext_target::ExtensionTarget;
 use plonky2::plonk::circuit_builder::CircuitBuilder;
 use starky::constraint_consumer::{ConstraintConsumer, RecursiveConstraintConsumer};
 
-use crate::util::felt_from_le_bits;
 use crate::bits::columns::{BitCols, BIT_COL_MAP};
+use crate::util::felt_from_le_bits;
 
 /// Constraints for AND, OR, and XOR from
 /// [zk_evm](https://github.com/0xPolygonZero/zk_evm/blob/677dc0dc066d15209773ce1e7c990df8a845da98/evm_arithmetization/src/logic.rs#L310).

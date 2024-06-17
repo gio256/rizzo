@@ -2,11 +2,11 @@
 #![feature(array_windows)]
 
 pub mod arith;
+pub mod bits;
+pub mod bytes;
 pub mod cpu;
 pub mod iter;
-pub mod bits;
 pub mod mem;
-pub mod pack;
 pub mod stark;
 pub mod util;
 pub mod vm;

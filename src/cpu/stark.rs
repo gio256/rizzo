@@ -13,9 +13,9 @@ use starky::evaluation_frame::{StarkEvaluationFrame, StarkFrame};
 use starky::lookup::{Column, Filter, Lookup};
 use starky::stark::Stark;
 
+use crate::bytes::{BYTES_HALF, BYTES_WORD};
 use crate::cpu::columns::{CpuCols, CPU_COL_MAP, N_CPU_COLS, N_MEM_CHANNELS};
 use crate::cpu::{arith, branch, clock, control_flow, flags, jump, membus, memio, reg};
-use crate::pack::{N_BYTES, N_BYTES_HALF};
 use crate::stark::Table;
 use crate::util::fst;
 use crate::vm::opcode::Opcode;
@@ -105,14 +105,14 @@ pub(crate) fn ctl_looking_bits_imm<F: Field>() -> TableWithColumns<F> {
     TableWithColumns::new(Table::Cpu as usize, cols, filter)
 }
 
-/// Looking table cpu->byte packing.
-pub(crate) fn ctl_looking_pack<F: Field>() -> TableWithColumns<F> {
+/// Looking table cpu->bytes
+pub(crate) fn ctl_looking_read_bytes<F: Field>() -> TableWithColumns<F> {
     let load_ops = [
         (CPU_COL_MAP.op.f_lb, F::ONE),
         (CPU_COL_MAP.op.f_lbu, F::ONE),
-        (CPU_COL_MAP.op.f_lh, F::from_canonical_usize(N_BYTES_HALF)),
-        (CPU_COL_MAP.op.f_lhu, F::from_canonical_usize(N_BYTES_HALF)),
-        (CPU_COL_MAP.op.f_lw, F::from_canonical_usize(N_BYTES)),
+        (CPU_COL_MAP.op.f_lh, F::from_canonical_usize(BYTES_HALF)),
+        (CPU_COL_MAP.op.f_lhu, F::from_canonical_usize(BYTES_HALF)),
+        (CPU_COL_MAP.op.f_lw, F::from_canonical_usize(BYTES_WORD)),
     ];
     let signed_ops = [CPU_COL_MAP.op.f_lb, CPU_COL_MAP.op.f_lh];
 
@@ -131,12 +131,12 @@ pub(crate) fn ctl_looking_pack<F: Field>() -> TableWithColumns<F> {
     TableWithColumns::new(Table::Cpu as usize, cols, filter)
 }
 
-/// Looking table cpu->byte packing.
-pub(crate) fn ctl_looking_unpack<F: Field>() -> TableWithColumns<F> {
+/// Looking table cpu->bytes
+pub(crate) fn ctl_looking_write_bytes<F: Field>() -> TableWithColumns<F> {
     let store_ops = [
         (CPU_COL_MAP.op.f_sb, F::ONE),
-        (CPU_COL_MAP.op.f_sh, F::from_canonical_usize(N_BYTES_HALF)),
-        (CPU_COL_MAP.op.f_sw, F::from_canonical_usize(N_BYTES)),
+        (CPU_COL_MAP.op.f_sh, F::from_canonical_usize(BYTES_HALF)),
+        (CPU_COL_MAP.op.f_sw, F::from_canonical_usize(BYTES_WORD)),
     ];
 
     let f_rw = Column::constant(F::ONE);

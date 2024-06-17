@@ -11,7 +11,7 @@ use crate::bits::columns::{BitCols, BIT_COL_MAP};
 pub(crate) fn eval<P: PackedField>(lv: &BitCols<P>, cc: &mut ConstraintConsumer<P>) {
     // flags in {0, 1}
     for flag in *lv.op {
-        cc.constraint (flag * (flag - P::ONES));
+        cc.constraint(flag * (flag - P::ONES));
     }
 
     // at most one op flag is set

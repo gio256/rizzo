@@ -6,8 +6,8 @@ use plonky2::iop::ext_target::ExtensionTarget;
 use plonky2::plonk::circuit_builder::CircuitBuilder;
 use starky::constraint_consumer::{ConstraintConsumer, RecursiveConstraintConsumer};
 
-use crate::util::felt_from_le_bits;
 use crate::bits::columns::{BitCols, WORD_BITS};
+use crate::util::felt_from_le_bits;
 
 /// Logical shift towards the most significant bit.
 fn sll<P: PackedField>(bits: &[P; WORD_BITS], shift_amt: &[P; WORD_BITS]) -> P {
