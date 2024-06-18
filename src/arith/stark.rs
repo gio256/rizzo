@@ -112,10 +112,17 @@ impl<F: RichField + Extendable<D>, const D: usize> Stark<F, D> for ArithStark<F,
 
 #[cfg(test)]
 mod tests {
+    use plonky2::field::types::{Field, PrimeField64, Sample};
     use plonky2::plonk::config::{GenericConfig, PoseidonGoldilocksConfig};
+    use plonky2::util::timing::TimingTree;
+    use rand::Rng;
+    use starky::config::StarkConfig;
+    use starky::prover::prove;
     use starky::stark_testing::{test_stark_circuit_constraints, test_stark_low_degree};
+    use starky::verifier::verify_stark_proof;
 
     use super::ArithStark;
+    use crate::arith::trace::{gen_trace, ArithOp, Op};
 
     const D: usize = 2;
     type C = PoseidonGoldilocksConfig;
@@ -133,4 +140,27 @@ mod tests {
     //     let stark: S = Default::default();
     //     test_stark_circuit_constraints::<F, C, S, D>(stark).unwrap();
     // }
+
+    #[test]
+    fn test_gen_eval() {
+        crate::util::impl_stark_no_ctls!(ArithStark);
+        type S = ArithStarkNoCtls<F, D>;
+        const CFG: StarkConfig = StarkConfig::standard_fast_config();
+        let mut rng = rand::thread_rng();
+
+        let stark: S = Default::default();
+        let ops = vec![
+            ArithOp::new(Op::ADD, rng.gen(), rng.gen()),
+            ArithOp::new(Op::SUB, rng.gen(), rng.gen()),
+            ArithOp::new(Op::LTU, rng.gen(), rng.gen()),
+            ArithOp::new(Op::LTS, rng.gen(), rng.gen()),
+            ArithOp::new(Op::GEU, rng.gen(), rng.gen()),
+            ArithOp::new(Op::GES, rng.gen(), rng.gen()),
+        ];
+        let min_rows = CFG.fri_config.num_cap_elements();
+        let trace = gen_trace::<F>(ops, min_rows);
+        let mut t = TimingTree::default();
+        let proof = prove::<F, C, S, D>(stark, &CFG, trace, &[], &mut t).unwrap();
+        verify_stark_proof(stark, proof, &CFG).unwrap();
+    }
 }

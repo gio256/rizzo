@@ -18,59 +18,7 @@ use crate::arith::columns::{ArithCols, ARITH_COL_MAP};
 /// The multiplicative inverse of 2^32.
 const GOLDILOCKS_INVERSE_REG_SIZE: u64 = 18446744065119617026;
 const REG_BITS: usize = 32;
-const SIGN_BIT: u32 = 1 << (REG_BITS - 1);
-
-pub(crate) fn generate<F: PrimeField64>(
-    lv: &mut ArithCols<F>,
-    filter: usize,
-    left: u32,
-    right: u32,
-) {
-    lv.in0 = F::from_canonical_u32(left);
-    lv.in1 = F::from_canonical_u32(right);
-
-    if filter == ARITH_COL_MAP.op.f_add {
-        let (res, cy) = left.overflowing_add(right);
-        lv.aux = F::from_bool(cy);
-        lv.out = F::from_canonical_u32(res);
-    } else if filter == ARITH_COL_MAP.op.f_sub {
-        let (diff, cy) = left.overflowing_sub(right);
-        lv.aux = F::from_bool(cy);
-        lv.out = F::from_canonical_u32(diff);
-    } else if filter == ARITH_COL_MAP.op.f_ltu {
-        let (diff, lt) = left.overflowing_sub(right);
-        lv.aux = F::from_canonical_u32(diff);
-        lv.out = F::from_bool(lt);
-    } else if filter == ARITH_COL_MAP.op.f_geu {
-        let (diff, lt) = left.overflowing_sub(right);
-        lv.aux = F::from_canonical_u32(diff);
-        lv.out = F::from_bool(!lt);
-    } else if filter == ARITH_COL_MAP.op.f_lts {
-        let (bias0, cy0) = left.overflowing_add(SIGN_BIT);
-        let (bias1, cy1) = right.overflowing_add(SIGN_BIT);
-        let (diff, lt) = bias0.overflowing_sub(bias1);
-
-        lv.in0_bias = F::from_canonical_u32(bias0);
-        lv.in1_bias = F::from_canonical_u32(bias1);
-        lv.in0_aux = F::from_bool(cy0);
-        lv.in1_aux = F::from_bool(cy1);
-        lv.aux = F::from_canonical_u32(diff);
-        lv.out = F::from_bool(lt);
-    } else if filter == ARITH_COL_MAP.op.f_ges {
-        let (bias0, cy0) = left.overflowing_add(SIGN_BIT);
-        let (bias1, cy1) = right.overflowing_add(SIGN_BIT);
-        let (diff, lt) = bias0.overflowing_sub(bias1);
-
-        lv.in0_bias = F::from_canonical_u32(bias0);
-        lv.in1_bias = F::from_canonical_u32(bias1);
-        lv.in0_aux = F::from_bool(cy0);
-        lv.in1_aux = F::from_bool(cy1);
-        lv.aux = F::from_canonical_u32(diff);
-        lv.out = F::from_bool(!lt);
-    } else {
-        panic!("bad instruction filter")
-    };
-}
+pub(in crate::arith) const SIGN_BIT: u32 = 1 << (REG_BITS - 1);
 
 /// See [zkevm] for more on the signed comparison method used here.
 ///
@@ -99,8 +47,7 @@ pub(crate) fn eval<P: PackedField>(lv: &ArithCols<P>, cc: &mut ConstraintConsume
     // x <s y iff (x ^ sign_bit) <u (y ^ sign_bit)
     //
     // where <s is signed less than and <u is unsigned less than.
-    // Because we ignore the carry bit, we can also replace xor
-    // in the above equation with addition.
+    // Note that we can also replace xor in the above equation with addition.
     // Reference: Hacker's Delight, 2nd edition, §2-12, via zk_evm
     let f_lts = lv.op.f_lts;
     let f_ges = lv.op.f_ges;
@@ -241,6 +188,7 @@ mod tests {
     use rand::{Rng, SeedableRng};
 
     use crate::arith::columns::N_ARITH_COLS;
+    use crate::arith::trace::{ArithOp, Op};
 
     use super::*;
 
@@ -272,20 +220,15 @@ mod tests {
     }
 
     #[test]
-    fn test_generate_eval_add() {
+    fn test_gen_eval_add() {
         let mut rng = rand::thread_rng();
-        let mut lv = [F::default(); N_ARITH_COLS].map(|_| F::sample(&mut rng));
-        let lv: &mut ArithCols<F> = lv.borrow_mut();
-
-        lv.op.iter_mut().for_each(|f| *f = F::ZERO);
-        lv.op.f_add = F::ONE;
-
-        let left: u32 = rng.gen();
-        let right: u32 = rng.gen();
-        generate(lv, ARITH_COL_MAP.op.f_add, left, right);
+        let left = rng.gen();
+        let right = rng.gen();
+        let op = ArithOp::new(Op::ADD, left, right);
+        let lv = op.into_row();
 
         let mut cc = constraint_consumer();
-        eval(lv, &mut cc);
+        eval(&lv, &mut cc);
         for acc in cc.accumulators() {
             assert_eq!(acc, F::ZERO);
         }
@@ -296,20 +239,15 @@ mod tests {
     }
 
     #[test]
-    fn test_generate_eval_sub() {
+    fn test_gen_eval_sub() {
         let mut rng = rand::thread_rng();
-        let mut lv = [F::default(); N_ARITH_COLS].map(|_| F::sample(&mut rng));
-        let lv: &mut ArithCols<F> = lv.borrow_mut();
-
-        lv.op.iter_mut().for_each(|f| *f = F::ZERO);
-        lv.op.f_sub = F::ONE;
-
         let left: u32 = rng.gen();
         let right: u32 = rng.gen();
-        generate(lv, ARITH_COL_MAP.op.f_sub, left, right);
+        let op = ArithOp::new(Op::SUB, left, right);
+        let lv = op.into_row();
 
         let mut cc = constraint_consumer();
-        eval(lv, &mut cc);
+        eval(&lv, &mut cc);
         for acc in cc.accumulators() {
             assert_eq!(acc, F::ZERO);
         }
@@ -320,94 +258,74 @@ mod tests {
     }
 
     #[test]
-    fn test_generate_eval_ltu() {
+    fn test_gen_eval_ltu() {
         let mut rng = rand::thread_rng();
-        let mut lv = [F::default(); N_ARITH_COLS].map(|_| F::sample(&mut rng));
-        let lv: &mut ArithCols<F> = lv.borrow_mut();
-
-        lv.op.iter_mut().for_each(|f| *f = F::ZERO);
-        lv.op.f_ltu = F::ONE;
-
         let left: u32 = rng.gen();
         let right: u32 = rng.gen();
-        generate(lv, ARITH_COL_MAP.op.f_ltu, left, right);
+        let op = ArithOp::new(Op::LTU, left, right);
+        let lv = op.into_row();
 
         let mut cc = constraint_consumer();
-        eval(lv, &mut cc);
+        eval(&lv, &mut cc);
         for acc in cc.accumulators() {
             assert_eq!(acc, F::ZERO);
         }
 
         let expect = left < right;
-        assert_eq!(lv.out, F::from_canonical_u32(expect as u32));
+        assert_eq!(lv.out, F::from_bool(expect));
     }
 
     #[test]
-    fn test_generate_eval_geu() {
+    fn test_gen_eval_geu() {
         let mut rng = rand::thread_rng();
-        let mut lv = [F::default(); N_ARITH_COLS].map(|_| F::sample(&mut rng));
-        let lv: &mut ArithCols<F> = lv.borrow_mut();
-
-        lv.op.iter_mut().for_each(|f| *f = F::ZERO);
-        lv.op.f_geu = F::ONE;
-
         let left: u32 = rng.gen();
         let right: u32 = rng.gen();
-        generate(lv, ARITH_COL_MAP.op.f_geu, left, right);
+        let op = ArithOp::new(Op::GEU, left, right);
+        let lv = op.into_row();
 
         let mut cc = constraint_consumer();
-        eval(lv, &mut cc);
+        eval(&lv, &mut cc);
         for acc in cc.accumulators() {
             assert_eq!(acc, F::ZERO);
         }
 
         let expect = left >= right;
-        assert_eq!(lv.out, F::from_canonical_u32(expect as u32));
+        assert_eq!(lv.out, F::from_bool(expect));
     }
 
     #[test]
-    fn test_generate_eval_lts() {
+    fn test_gen_eval_lts() {
         let mut rng = rand::thread_rng();
-        let mut lv = [F::default(); N_ARITH_COLS].map(|_| F::sample(&mut rng));
-        let lv: &mut ArithCols<F> = lv.borrow_mut();
-
-        lv.op.iter_mut().for_each(|f| *f = F::ZERO);
-        lv.op.f_lts = F::ONE;
-
-        let left: u32 = rng.gen();
-        let right: u32 = rng.gen();
-        generate(lv, ARITH_COL_MAP.op.f_lts, left, right);
+        let left: i32 = rng.gen();
+        let right: i32 = rng.gen();
+        let op = ArithOp::new(Op::LTS, left as u32, right as u32);
+        let lv = op.into_row();
 
         let mut cc = constraint_consumer();
-        eval(lv, &mut cc);
+        eval(&lv, &mut cc);
         for acc in cc.accumulators() {
             assert_eq!(acc, F::ZERO);
         }
 
-        let expect = (left as i32) < (right as i32);
-        assert_eq!(lv.out, F::from_canonical_u32(expect as u32));
+        let expect = left < right;
+        assert_eq!(lv.out, F::from_bool(expect));
     }
 
     #[test]
-    fn test_generate_eval_ges() {
+    fn test_gen_eval_ges() {
         let mut rng = rand::thread_rng();
-        let mut lv = [F::default(); N_ARITH_COLS].map(|_| F::sample(&mut rng));
-        let lv: &mut ArithCols<F> = lv.borrow_mut();
-
-        lv.op.iter_mut().for_each(|f| *f = F::ZERO);
-        lv.op.f_ges = F::ONE;
-
-        let left: u32 = rng.gen();
-        let right: u32 = rng.gen();
-        generate(lv, ARITH_COL_MAP.op.f_ges, left, right);
+        let left: i32 = rng.gen();
+        let right: i32 = rng.gen();
+        let op = ArithOp::new(Op::GES, left as u32, right as u32);
+        let lv = op.into_row();
 
         let mut cc = constraint_consumer();
-        eval(lv, &mut cc);
+        eval(&lv, &mut cc);
         for acc in cc.accumulators() {
             assert_eq!(acc, F::ZERO);
         }
 
-        let expect = (left as i32) >= (right as i32);
-        assert_eq!(lv.out, F::from_canonical_u32(expect as u32));
+        let expect = left >= right;
+        assert_eq!(lv.out, F::from_bool(expect));
     }
 }

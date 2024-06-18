@@ -12,7 +12,7 @@ pub(crate) const N_OP_COLS: usize = core::mem::size_of::<OpCols<u8>>();
 
 /// Flag columns for the operation to perform.
 #[repr(C)]
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Default)]
 pub(crate) struct OpCols<T> {
     /// Addition.
     pub f_add: T,
@@ -30,7 +30,7 @@ pub(crate) struct OpCols<T> {
 
 /// Columns for the arithmetic stark.
 #[repr(C)]
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Default)]
 pub(crate) struct ArithCols<T> {
     /// The operation to perform.
     pub op: OpCols<T>,
@@ -52,9 +52,20 @@ pub(crate) struct ArithCols<T> {
     pub in1_aux: T,
 }
 
+impl<T: Copy> ArithCols<T> {
+    pub(crate) fn to_vec(&self) -> Vec<T> {
+        Borrow::<[T; N_ARITH_COLS]>::borrow(self).to_vec()
+    }
+}
+
 const fn make_col_map() -> ArithCols<usize> {
     let arr = crate::util::indices_arr::<N_ARITH_COLS>();
     unsafe { core::mem::transmute::<[usize; N_ARITH_COLS], ArithCols<usize>>(arr) }
+}
+
+const fn make_op_col_map() -> OpCols<usize> {
+    let arr = crate::util::indices_arr::<N_OP_COLS>();
+    unsafe { core::mem::transmute::<[usize; N_OP_COLS], OpCols<usize>>(arr) }
 }
 
 impl<T: Copy> Borrow<ArithCols<T>> for [T; N_ARITH_COLS] {
