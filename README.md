@@ -18,3 +18,9 @@ Licensed under either of
 * MIT license ([LICENSE-MIT](LICENSE-MIT) or http://opensource.org/licenses/MIT)
 
 at your option.
+
+## Acknowledgements
+In addition to repurposing much of the work done in [zk\_evm](https://github.com/0xPolygonZero/zk_evm), Rizzo takes ideas, code, and/or inspiration from the following projects:
+- [Jolt](https://github.com/a16z/jolt)
+- [SP1](https://github.com/succinctlabs/sp1)
+- [Valida](https://github.com/valida-xyz/valida)
