@@ -6,7 +6,6 @@ use plonky2::field::extension::{Extendable, FieldExtension};
 use plonky2::field::packed::PackedField;
 use plonky2::field::polynomial::PolynomialValues;
 use plonky2::field::types::Field;
-use plonky2::hash::hash_types::RichField;
 use plonky2::iop::ext_target::ExtensionTarget;
 use plonky2::plonk::circuit_builder::CircuitBuilder;
 use plonky2::util::transpose;
@@ -88,20 +87,14 @@ impl BitOp {
     }
 }
 
-pub(crate) fn gen_trace<F: RichField>(
-    ops: Vec<BitOp>,
-    min_rows: usize,
-) -> Vec<PolynomialValues<F>> {
+pub(crate) fn gen_trace<F: Field>(ops: Vec<BitOp>, min_rows: usize) -> Vec<PolynomialValues<F>> {
     let trace = gen_trace_rows(ops, min_rows);
     let trace_rows: Vec<_> = trace.map(|col| col.to_vec()).collect();
     let trace_cols = transpose(&trace_rows);
     trace_cols.into_iter().map(PolynomialValues::new).collect()
 }
 
-fn gen_trace_rows<F: RichField>(
-    ops: Vec<BitOp>,
-    min_rows: usize,
-) -> impl Iterator<Item = BitCols<F>> {
+fn gen_trace_rows<F: Field>(ops: Vec<BitOp>, min_rows: usize) -> impl Iterator<Item = BitCols<F>> {
     let n_rows = max(ops.len(), min_rows).next_power_of_two();
     ops.into_iter()
         .map(BitOp::into_row)

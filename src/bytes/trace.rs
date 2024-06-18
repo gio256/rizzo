@@ -8,7 +8,6 @@ use plonky2::field::extension::{Extendable, FieldExtension};
 use plonky2::field::packed::PackedField;
 use plonky2::field::polynomial::PolynomialValues;
 use plonky2::field::types::Field;
-use plonky2::hash::hash_types::RichField;
 use plonky2::iop::ext_target::ExtensionTarget;
 use plonky2::plonk::circuit_builder::CircuitBuilder;
 use plonky2::util::transpose;
@@ -85,7 +84,7 @@ impl ByteOp {
     }
 }
 
-pub(crate) fn gen_trace<F: RichField>(
+pub(crate) fn gen_trace<F: Field>(
     mut ops: Vec<ByteOp>,
     min_rows: usize,
 ) -> Vec<PolynomialValues<F>> {
@@ -95,7 +94,7 @@ pub(crate) fn gen_trace<F: RichField>(
     trace_cols.into_iter().map(PolynomialValues::new).collect()
 }
 
-fn gen_trace_rows<F: RichField>(mut ops: Vec<ByteOp>, min_rows: usize) -> Vec<ByteCols<F>> {
+fn gen_trace_rows<F: Field>(mut ops: Vec<ByteOp>, min_rows: usize) -> Vec<ByteCols<F>> {
     let n_ops = ops.iter().filter(|op| !op.bytes.is_empty()).count();
     let n_rows = max(max(n_ops, u8::MAX.into()), min_rows).next_power_of_two();
 
