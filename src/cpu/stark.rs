@@ -10,7 +10,7 @@ use plonky2::plonk::circuit_builder::CircuitBuilder;
 use starky::constraint_consumer::{ConstraintConsumer, RecursiveConstraintConsumer};
 use starky::cross_table_lookup::TableWithColumns;
 use starky::evaluation_frame::{StarkEvaluationFrame, StarkFrame};
-use starky::lookup::{Column, Filter, Lookup};
+use starky::lookup::{Column, Filter};
 use starky::stark::Stark;
 
 use crate::bytes::{BYTES_HALF, BYTES_WORD};

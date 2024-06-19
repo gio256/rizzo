@@ -14,7 +14,6 @@ use starky::evaluation_frame::{StarkEvaluationFrame, StarkFrame};
 use starky::lookup::{Column, Filter, Lookup};
 use starky::stark::Stark;
 
-use crate::arith::addcy::eval_sub;
 use crate::bytes::columns::{ByteCols, BYTE_COL_MAP, N_BYTE_COLS};
 use crate::bytes::BYTES_WORD;
 use crate::stark::Table;

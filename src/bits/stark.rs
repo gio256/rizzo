@@ -1,11 +1,9 @@
 use core::borrow::Borrow;
-use core::iter::zip;
 use core::marker::PhantomData;
 
-use itertools::izip;
 use plonky2::field::extension::{Extendable, FieldExtension};
 use plonky2::field::packed::PackedField;
-use plonky2::field::types::{Field, PrimeField64};
+use plonky2::field::types::Field;
 use plonky2::hash::hash_types::RichField;
 use plonky2::iop::ext_target::ExtensionTarget;
 use plonky2::plonk::circuit_builder::CircuitBuilder;
@@ -15,10 +13,10 @@ use starky::evaluation_frame::{StarkEvaluationFrame, StarkFrame};
 use starky::lookup::{Column, Filter};
 use starky::stark::Stark;
 
-use crate::bits::columns::{BitCols, BIT_COL_MAP, N_BIT_COLS, WORD_BITS};
+use crate::bits::columns::{BitCols, BIT_COL_MAP, N_BIT_COLS};
 use crate::bits::{flags, logic, shift};
 use crate::stark::Table;
-use crate::util::{felt_from_le_bits, fst};
+use crate::util::fst;
 use crate::vm::opcode::Opcode;
 
 /// Operation flags and the corresponding opcode for AND, XOR, and OR.
@@ -131,7 +129,6 @@ impl<F: RichField + Extendable<D>, const D: usize> Stark<F, D> for BitStark<F, D
 
 #[cfg(test)]
 mod tests {
-    use plonky2::field::types::{Field, PrimeField64, Sample};
     use plonky2::plonk::config::{GenericConfig, PoseidonGoldilocksConfig};
     use plonky2::util::timing::TimingTree;
     use rand::Rng;

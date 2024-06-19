@@ -1,21 +1,11 @@
 use core::cmp::max;
 use core::iter::repeat;
 
-use hashbrown::HashMap;
-use plonky2::field::extension::{Extendable, FieldExtension};
-use plonky2::field::packed::PackedField;
 use plonky2::field::polynomial::PolynomialValues;
 use plonky2::field::types::Field;
-use plonky2::iop::ext_target::ExtensionTarget;
-use plonky2::plonk::circuit_builder::CircuitBuilder;
 use plonky2::util::transpose;
-use starky::constraint_consumer::{ConstraintConsumer, RecursiveConstraintConsumer};
-use starky::cross_table_lookup::TableWithColumns;
-use starky::evaluation_frame::{StarkEvaluationFrame, StarkFrame};
-use starky::lookup::{Column, Filter, Lookup};
-use starky::stark::Stark;
 
-use crate::bits::columns::{BitCols, OpCols, N_BIT_COLS, OP_COL_MAP, WORD_BITS};
+use crate::bits::columns::{BitCols, OpCols, OP_COL_MAP, WORD_BITS};
 use crate::util::u32_to_le_bits;
 
 #[allow(clippy::upper_case_acronyms)]

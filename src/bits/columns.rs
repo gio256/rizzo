@@ -1,9 +1,6 @@
 use core::borrow::{Borrow, BorrowMut};
 use core::ops::{Deref, DerefMut, Index, IndexMut};
 
-use plonky2::field::packed::PackedField;
-use static_assertions::const_assert;
-
 pub(crate) const WORD_BITS: usize = 32;
 
 /// The value of each struct field is the index of the corresponding column.

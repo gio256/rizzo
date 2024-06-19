@@ -3,7 +3,7 @@ use core::marker::PhantomData;
 
 use plonky2::field::extension::{Extendable, FieldExtension};
 use plonky2::field::packed::PackedField;
-use plonky2::field::types::{Field, PrimeField64};
+use plonky2::field::types::Field;
 use plonky2::hash::hash_types::RichField;
 use plonky2::iop::ext_target::ExtensionTarget;
 use plonky2::plonk::circuit_builder::CircuitBuilder;
@@ -112,7 +112,6 @@ impl<F: RichField + Extendable<D>, const D: usize> Stark<F, D> for ArithStark<F,
 
 #[cfg(test)]
 mod tests {
-    use plonky2::field::types::{Field, PrimeField64, Sample};
     use plonky2::plonk::config::{GenericConfig, PoseidonGoldilocksConfig};
     use plonky2::util::timing::TimingTree;
     use rand::Rng;

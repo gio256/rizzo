@@ -1,12 +1,11 @@
 use plonky2::field::extension::Extendable;
 use plonky2::field::packed::PackedField;
-use plonky2::field::types::Field;
 use plonky2::hash::hash_types::RichField;
 use plonky2::iop::ext_target::ExtensionTarget;
 use plonky2::plonk::circuit_builder::CircuitBuilder;
 use starky::constraint_consumer::{ConstraintConsumer, RecursiveConstraintConsumer};
 
-use crate::cpu::columns::{CpuCols, CPU_COL_MAP};
+use crate::cpu::columns::CpuCols;
 
 pub(crate) fn eval<P: PackedField>(
     lv: &CpuCols<P>,

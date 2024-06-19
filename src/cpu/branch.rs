@@ -6,7 +6,7 @@ use plonky2::iop::ext_target::ExtensionTarget;
 use plonky2::plonk::circuit_builder::CircuitBuilder;
 use starky::constraint_consumer::{ConstraintConsumer, RecursiveConstraintConsumer};
 
-use crate::arith::{eval_add_transition, eval_ltu};
+use crate::arith::eval_add_transition;
 use crate::cpu::columns::CpuCols;
 use crate::cpu::control_flow::INSTRUCTION_BYTES;
 
@@ -18,7 +18,6 @@ pub(crate) fn eval<P: PackedField>(
     let f_beq = lv.op.f_beq;
     let f_bne = lv.op.f_bne;
     let f_branch = f_beq + f_bne + lv.op.f_bltu + lv.op.f_bgeu + lv.op.f_blt + lv.op.f_bge;
-    let f_not_branch = P::ONES - f_branch;
 
     let blv = lv.shared.branch();
     let f_take_branch = blv.f_take_branch;

@@ -1,5 +1,5 @@
 use plonky2::field::packed::PackedField;
-use plonky2::field::types::{Field, PrimeField64};
+use plonky2::field::types::Field;
 
 /// Returns a field element constructed from its representation as a
 /// little-endian ordered iterator over field elements in {0, 1}.

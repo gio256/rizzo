@@ -1,12 +1,11 @@
 use plonky2::field::extension::Extendable;
 use plonky2::field::packed::PackedField;
-use plonky2::field::types::Field;
 use plonky2::hash::hash_types::RichField;
 use plonky2::iop::ext_target::ExtensionTarget;
 use plonky2::plonk::circuit_builder::CircuitBuilder;
 use starky::constraint_consumer::{ConstraintConsumer, RecursiveConstraintConsumer};
 
-use crate::bits::columns::{BitCols, BIT_COL_MAP};
+use crate::bits::columns::BitCols;
 
 pub(crate) fn eval<P: PackedField>(lv: &BitCols<P>, cc: &mut ConstraintConsumer<P>) {
     // flags in {0, 1}

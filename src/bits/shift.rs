@@ -7,7 +7,6 @@ use plonky2::plonk::circuit_builder::CircuitBuilder;
 use starky::constraint_consumer::{ConstraintConsumer, RecursiveConstraintConsumer};
 
 use crate::bits::columns::{BitCols, WORD_BITS};
-use crate::util::felt_from_le_bits;
 
 /// Logical shift towards the most significant bit.
 fn sll<P: PackedField>(bits: &[P; WORD_BITS], shift_amt: &[P; WORD_BITS]) -> P {
@@ -109,7 +108,7 @@ pub(crate) fn eval_circuit<F: RichField + Extendable<D>, const D: usize>(
 
 #[cfg(test)]
 mod tests {
-    use plonky2::field::types::{Field, PrimeField64, Sample};
+    use plonky2::field::types::Field;
     use plonky2::plonk::config::{GenericConfig, PoseidonGoldilocksConfig};
     use rand::Rng;
 

@@ -222,7 +222,7 @@ mod tests {
         const CFG: StarkConfig = StarkConfig::standard_fast_config();
 
         let stark: S = Default::default();
-        let mut ops = vec![
+        let ops = vec![
             MemOp {
                 on: true,
                 time: 1,

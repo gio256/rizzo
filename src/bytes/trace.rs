@@ -1,26 +1,13 @@
-use core::borrow::Borrow;
 use core::cmp::{max, min};
-use core::iter::{once, repeat};
-use core::marker::PhantomData;
+use core::iter::repeat;
 
 use hashbrown::HashMap;
-use plonky2::field::extension::{Extendable, FieldExtension};
-use plonky2::field::packed::PackedField;
 use plonky2::field::polynomial::PolynomialValues;
 use plonky2::field::types::Field;
-use plonky2::iop::ext_target::ExtensionTarget;
-use plonky2::plonk::circuit_builder::CircuitBuilder;
 use plonky2::util::transpose;
-use starky::constraint_consumer::{ConstraintConsumer, RecursiveConstraintConsumer};
-use starky::cross_table_lookup::TableWithColumns;
-use starky::evaluation_frame::{StarkEvaluationFrame, StarkFrame};
-use starky::lookup::{Column, Filter, Lookup};
-use starky::stark::Stark;
 
-use crate::bytes::columns::{ByteCols, RangeCheck, BYTE_COL_MAP, N_BYTE_COLS};
+use crate::bytes::columns::{ByteCols, RangeCheck};
 use crate::bytes::BYTES_WORD;
-use crate::iter::{windows_mut, LendIter};
-use crate::stark::Table;
 
 #[derive(Clone, Debug)]
 pub(crate) struct ByteOp {
@@ -84,17 +71,14 @@ impl ByteOp {
     }
 }
 
-pub(crate) fn gen_trace<F: Field>(
-    mut ops: Vec<ByteOp>,
-    min_rows: usize,
-) -> Vec<PolynomialValues<F>> {
+pub(crate) fn gen_trace<F: Field>(ops: Vec<ByteOp>, min_rows: usize) -> Vec<PolynomialValues<F>> {
     let trace = gen_trace_rows(ops, min_rows);
     let trace_rows: Vec<_> = trace.iter().map(ByteCols::to_vec).collect();
     let trace_cols = transpose(&trace_rows);
     trace_cols.into_iter().map(PolynomialValues::new).collect()
 }
 
-fn gen_trace_rows<F: Field>(mut ops: Vec<ByteOp>, min_rows: usize) -> Vec<ByteCols<F>> {
+fn gen_trace_rows<F: Field>(ops: Vec<ByteOp>, min_rows: usize) -> Vec<ByteCols<F>> {
     let n_ops = ops.iter().filter(|op| !op.bytes.is_empty()).count();
     let n_rows = max(max(n_ops, u8::MAX.into()), min_rows).next_power_of_two();
 

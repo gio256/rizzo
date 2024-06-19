@@ -1,12 +1,5 @@
-use core::ops::Deref;
-
-use plonky2::field::extension::Extendable;
 use plonky2::field::types::Field;
-use plonky2::hash::hash_types::RichField;
-use starky::config::StarkConfig;
-use starky::cross_table_lookup::{CrossTableLookup, TableIdx, TableWithColumns};
-use starky::evaluation_frame::StarkFrame;
-use starky::stark::Stark;
+use starky::cross_table_lookup::CrossTableLookup;
 
 use crate::bytes::BYTES_WORD;
 use crate::cpu::columns::N_MEM_CHANNELS;

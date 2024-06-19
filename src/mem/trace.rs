@@ -1,28 +1,15 @@
-use core::borrow::Borrow;
-use core::cmp::max;
-use core::iter::{once, repeat};
-use core::marker::PhantomData;
+use core::iter::repeat;
 
 use hashbrown::HashMap;
-use plonky2::field::extension::{Extendable, FieldExtension};
-use plonky2::field::packed::PackedField;
 use plonky2::field::polynomial::PolynomialValues;
 use plonky2::field::types::Field;
 use plonky2::hash::hash_types::RichField;
-use plonky2::iop::ext_target::ExtensionTarget;
-use plonky2::plonk::circuit_builder::CircuitBuilder;
 use plonky2::util::transpose;
 use plonky2_maybe_rayon::{MaybeIntoParIter, ParallelIterator};
-use starky::constraint_consumer::{ConstraintConsumer, RecursiveConstraintConsumer};
-use starky::cross_table_lookup::TableWithColumns;
-use starky::evaluation_frame::{StarkEvaluationFrame, StarkFrame};
-use starky::lookup::{Column, Filter, Lookup};
-use starky::stark::Stark;
 
 use crate::iter::{windows_mut, LendIter};
-use crate::mem::columns::{MemCols, MEM_COL_MAP, N_MEM_COLS};
+use crate::mem::columns::MemCols;
 use crate::mem::Segment;
-use crate::stark::Table;
 
 #[derive(Clone, Copy, Debug)]
 pub(crate) enum MemKind {
@@ -95,7 +82,7 @@ impl MemOp {
     }
 }
 
-pub(crate) fn gen_trace<F: RichField>(mut ops: Vec<MemOp>) -> Vec<PolynomialValues<F>> {
+pub(crate) fn gen_trace<F: RichField>(ops: Vec<MemOp>) -> Vec<PolynomialValues<F>> {
     let trace = gen_trace_rows(ops);
     let trace_rows: Vec<_> = trace.iter().map(MemCols::to_vec).collect();
     let trace_cols = transpose(&trace_rows);

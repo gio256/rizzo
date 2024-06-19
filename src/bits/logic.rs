@@ -7,7 +7,7 @@ use plonky2::iop::ext_target::ExtensionTarget;
 use plonky2::plonk::circuit_builder::CircuitBuilder;
 use starky::constraint_consumer::{ConstraintConsumer, RecursiveConstraintConsumer};
 
-use crate::bits::columns::{BitCols, BIT_COL_MAP};
+use crate::bits::columns::BitCols;
 use crate::util::felt_from_le_bits;
 
 /// Constraints for AND, OR, and XOR from [zk_evm].

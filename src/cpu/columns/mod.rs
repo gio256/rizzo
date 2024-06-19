@@ -1,7 +1,6 @@
 use core::borrow::{Borrow, BorrowMut};
 use core::ops::{Deref, DerefMut, Index, IndexMut};
 
-use plonky2::field::packed::PackedField;
 use static_assertions::const_assert;
 
 mod shared;

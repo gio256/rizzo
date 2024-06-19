@@ -5,15 +5,15 @@
 //!
 //! [zk_evm]: https://github.com/0xPolygonZero/zk_evm/blob/develop/evm_arithmetization/src/arithmetic/addcy.rs
 
-use plonky2::field::extension::{Extendable, FieldExtension};
+use plonky2::field::extension::Extendable;
 use plonky2::field::packed::PackedField;
-use plonky2::field::types::{Field, PrimeField64};
+use plonky2::field::types::Field;
 use plonky2::hash::hash_types::RichField;
 use plonky2::iop::ext_target::ExtensionTarget;
 use plonky2::plonk::circuit_builder::CircuitBuilder;
 use starky::constraint_consumer::{ConstraintConsumer, RecursiveConstraintConsumer};
 
-use crate::arith::columns::{ArithCols, ARITH_COL_MAP};
+use crate::arith::columns::ArithCols;
 
 /// The multiplicative inverse of 2^32.
 const GOLDILOCKS_INVERSE_REG_SIZE: u64 = 18446744065119617026;
@@ -185,7 +185,7 @@ mod tests {
     use core::borrow::BorrowMut;
     use plonky2::field::goldilocks_field::GoldilocksField;
     use plonky2::field::types::Sample;
-    use rand::{Rng, SeedableRng};
+    use rand::Rng;
 
     use crate::arith::columns::N_ARITH_COLS;
     use crate::arith::trace::{ArithOp, Op};

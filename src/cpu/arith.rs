@@ -1,15 +1,9 @@
-use core::borrow::Borrow;
-use core::marker::PhantomData;
-
-use plonky2::field::extension::{Extendable, FieldExtension};
+use plonky2::field::extension::Extendable;
 use plonky2::field::packed::PackedField;
-use plonky2::field::types::{Field, PrimeField64};
 use plonky2::hash::hash_types::RichField;
 use plonky2::iop::ext_target::ExtensionTarget;
 use plonky2::plonk::circuit_builder::CircuitBuilder;
 use starky::constraint_consumer::{ConstraintConsumer, RecursiveConstraintConsumer};
-use starky::evaluation_frame::{StarkEvaluationFrame, StarkFrame};
-use starky::stark::Stark;
 
 use crate::cpu::columns::CpuCols;
 
