@@ -120,7 +120,7 @@ fn eval_all_circuit<F: RichField + Extendable<D>, const D: usize>(
     cc.constraint(cb, cs);
 }
 
-#[derive(Clone, Copy, Default)]
+#[derive(Debug, Clone, Copy, Default)]
 pub struct MemStark<F, const D: usize> {
     _unused: PhantomData<F>,
 }

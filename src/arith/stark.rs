@@ -43,7 +43,7 @@ pub(crate) fn ctl_looked<F: Field>() -> TableWithColumns<F> {
     TableWithColumns::new(Table::Arith as usize, cols, filter)
 }
 
-#[derive(Clone, Copy, Default)]
+#[derive(Debug, Clone, Copy, Default)]
 pub(crate) struct ArithStark<F, const D: usize> {
     _unused: PhantomData<F>,
 }

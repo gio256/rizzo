@@ -1,4 +1,5 @@
 #![allow(unused)]
+#![deny(missing_debug_implementations)]
 #![feature(array_windows)]
 
 pub mod arith;

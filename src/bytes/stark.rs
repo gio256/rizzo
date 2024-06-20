@@ -137,7 +137,7 @@ fn eval_all_circuit<F: RichField + Extendable<D>, const D: usize>(
     todo!()
 }
 
-#[derive(Clone, Copy, Default)]
+#[derive(Debug, Clone, Copy, Default)]
 pub struct ByteStark<F, const D: usize> {
     _unused: PhantomData<F>,
 }

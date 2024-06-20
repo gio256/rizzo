@@ -205,7 +205,7 @@ fn eval_all_circuit<F: RichField + Extendable<D>, const D: usize>(
     reg::eval_circuit(cb, lv, nv, cc);
 }
 
-#[derive(Clone, Copy, Default)]
+#[derive(Debug, Clone, Copy, Default)]
 pub struct CpuStark<F, const D: usize> {
     _unused: PhantomData<F>,
 }
