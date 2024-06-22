@@ -1,0 +1,17 @@
+[package]
+name = "rizzo-derive"
+version = "0.1.0"
+edition = "2021"
+license = "MIT OR Apache-2.0"
+
+[lib]
+proc-macro = true
+
+[[test]]
+name = "tests"
+path = "tests/main.rs"
+
+[dependencies]
+syn = { version = "2.0", features = ["extra-traits"] }
+quote = "1.0"
+proc-macro2 = "1.0"
