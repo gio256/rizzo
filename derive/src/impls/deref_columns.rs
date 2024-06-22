@@ -31,7 +31,7 @@ pub(crate) fn try_derive(ast: DeriveInput) -> Result<proc_macro2::TokenStream> {
         {
             type Target = [#felt_ty; ::core::mem::size_of::<#name<u8 #(, #rest_generics)*>>()];
 
-            fn deref(&self) -> &Self::Target {
+            fn deref(&self) -> &<Self as ::core::ops::Deref>::Target {
                 unsafe { core::mem::transmute(self) }
             }
         }
@@ -39,7 +39,7 @@ pub(crate) fn try_derive(ast: DeriveInput) -> Result<proc_macro2::TokenStream> {
         impl #impl_generics ::core::ops::DerefMut for #name #ty_generics
             #where_clause
         {
-            fn deref_mut(&mut self) -> &mut Self::Target {
+            fn deref_mut(&mut self) -> &mut <Self as ::core::ops::Deref>::Target {
                 unsafe { core::mem::transmute(self) }
             }
 

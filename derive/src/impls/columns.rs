@@ -127,7 +127,7 @@ pub(crate) fn try_derive(ast: DeriveInput) -> Result<proc_macro2::TokenStream> {
     all_generics.params.push(index_ty.clone());
     let (index_generics, _, _) = all_generics.split_for_impl();
 
-    // An empty where predicate to constrain any const generics
+    // An empty predicate to constrain any const generics
     let const_pred: WherePredicate =
         parse_quote!([(); ::core::mem::size_of::<#name<u8 #(, #rest_generics)*>>()]:);
 
@@ -144,10 +144,10 @@ pub(crate) fn try_derive(ast: DeriveInput) -> Result<proc_macro2::TokenStream> {
     index_mut_where_clause.predicates.push(const_pred.clone());
 
     // Where clause for `Default`.
-    let default_pred = parse_quote!(#felt_ty: ::core::default::Default + core::marker::Copy);
-    let mut default_where_clause = where_clause;
+    let default_pred = parse_quote!(#felt_ty: ::core::default::Default + ::core::marker::Copy);
+    let mut default_where_clause = where_clause.clone();
     default_where_clause.predicates.push(default_pred);
-    default_where_clause.predicates.push(const_pred);
+    default_where_clause.predicates.push(const_pred.clone());
 
     Ok(quote! {
         #convert_impls
@@ -157,7 +157,9 @@ pub(crate) fn try_derive(ast: DeriveInput) -> Result<proc_macro2::TokenStream> {
         {
             type Output = <[#felt_ty] as ::core::ops::Index<#index_ty>>::Output;
 
-            fn index(&self, index: #index_ty) -> &<Self as ::core::ops::Index<#index_ty>>::Output {
+            fn index(&self, index: #index_ty)
+                -> &<Self as ::core::ops::Index<#index_ty>>::Output
+            {
                 let arr = ::core::borrow::Borrow::<
                         [#felt_ty; ::core::mem::size_of::<#name<u8 #(, #rest_generics)*>>()]
                     >::borrow(self);
@@ -168,7 +170,9 @@ pub(crate) fn try_derive(ast: DeriveInput) -> Result<proc_macro2::TokenStream> {
         impl #index_generics ::core::ops::IndexMut<#index_ty> for #name #ty_generics
             #index_mut_where_clause
         {
-            fn index_mut(&mut self, index: #index_ty) -> &mut <Self as ::core::ops::Index<#index_ty>>::Output {
+            fn index_mut(&mut self, index: #index_ty)
+                -> &mut <Self as ::core::ops::Index<#index_ty>>::Output
+            {
                 let arr = ::core::borrow::BorrowMut::<
                         [#felt_ty; ::core::mem::size_of::<#name<u8 #(, #rest_generics)*>>()]
                     >::borrow_mut(self);

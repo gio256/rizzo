@@ -2,13 +2,14 @@ use core::borrow::{Borrow, BorrowMut};
 use core::ops::{Deref, DerefMut, Index, IndexMut};
 
 use static_assertions::const_assert;
+use rizzo_derive::{Columns, DerefColumns};
 
 mod shared;
 use shared::SharedCols;
 
 /// The total number of memory channels.
 pub(crate) const N_MEM_CHANNELS: usize = 3;
-/// The number of field elements in `MemChannel`.
+/// The number of field elements in a `MemChannel`.
 pub(crate) const N_MEM_CHANNEL_COLS: usize = core::mem::size_of::<MemChannel<u8>>();
 
 /// Columns for a single memory channel.
@@ -32,7 +33,7 @@ pub(crate) const N_OP_COLS: usize = core::mem::size_of::<OpCols<u8>>();
 
 /// Flag columns for the operation to perform.
 #[repr(C)]
-#[derive(Clone, Eq, PartialEq, Debug)]
+#[derive(DerefColumns, Clone, Eq, PartialEq, Debug)]
 pub(crate) struct OpCols<T> {
     pub f_arith: T,
     pub f_bits: T,
@@ -61,7 +62,7 @@ pub(crate) const N_CPU_COLS: usize = core::mem::size_of::<CpuCols<u8>>();
 
 /// Columns for the cpu stark.
 #[repr(C)]
-#[derive(Clone, Debug)]
+#[derive(Columns, Clone, Debug)]
 pub(crate) struct CpuCols<T: Copy> {
     /// CPU clock.
     pub clock: T,
@@ -114,62 +115,4 @@ impl<T: Copy> CpuCols<T> {
 const fn make_col_map() -> CpuCols<usize> {
     let arr = crate::util::indices_arr::<N_CPU_COLS>();
     unsafe { core::mem::transmute::<[usize; N_CPU_COLS], CpuCols<usize>>(arr) }
-}
-
-impl<T: Copy> Borrow<CpuCols<T>> for [T; N_CPU_COLS] {
-    fn borrow(&self) -> &CpuCols<T> {
-        unsafe { core::mem::transmute(self) }
-    }
-}
-
-impl<T: Copy> BorrowMut<CpuCols<T>> for [T; N_CPU_COLS] {
-    fn borrow_mut(&mut self) -> &mut CpuCols<T> {
-        unsafe { core::mem::transmute(self) }
-    }
-}
-
-impl<T: Copy> Borrow<[T; N_CPU_COLS]> for CpuCols<T> {
-    fn borrow(&self) -> &[T; N_CPU_COLS] {
-        unsafe { core::mem::transmute(self) }
-    }
-}
-
-impl<T: Copy> BorrowMut<[T; N_CPU_COLS]> for CpuCols<T> {
-    fn borrow_mut(&mut self) -> &mut [T; N_CPU_COLS] {
-        unsafe { core::mem::transmute(self) }
-    }
-}
-
-impl<T: Copy, I> Index<I> for CpuCols<T>
-where
-    [T]: Index<I>,
-{
-    type Output = <[T] as Index<I>>::Output;
-    fn index(&self, i: I) -> &Self::Output {
-        let arr: &[T; N_CPU_COLS] = self.borrow();
-        <[T] as Index<I>>::index(arr, i)
-    }
-}
-
-impl<T: Copy, I> IndexMut<I> for CpuCols<T>
-where
-    [T]: IndexMut<I>,
-{
-    fn index_mut(&mut self, i: I) -> &mut Self::Output {
-        let arr: &mut [T; N_CPU_COLS] = self.borrow_mut();
-        <[T] as IndexMut<I>>::index_mut(arr, i)
-    }
-}
-
-impl<T: Copy> Deref for OpCols<T> {
-    type Target = [T; N_OP_COLS];
-    fn deref(&self) -> &Self::Target {
-        unsafe { core::mem::transmute(self) }
-    }
-}
-
-impl<T: Copy> DerefMut for OpCols<T> {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        unsafe { core::mem::transmute(self) }
-    }
 }

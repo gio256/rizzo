@@ -16,6 +16,7 @@ plonky2_util = { git = "https://github.com/0xPolygonZero/plonky2.git", rev = "7b
 starky = { git = "https://github.com/0xPolygonZero/plonky2.git", rev = "7ba3c1f298faddb99543b59fe24d898f092f78e8" }
 static_assertions = "1.1.0"
 itertools = "0.13.0"
+rizzo_derive = { path = "derive" }
 
 [dev-dependencies]
 rand = "0.8.5"

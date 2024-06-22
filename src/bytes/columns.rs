@@ -1,6 +1,8 @@
 use core::borrow::{Borrow, BorrowMut};
 use core::ops::{Deref, DerefMut, Index, IndexMut};
 
+use rizzo_derive::{Columns, DerefColumns};
+
 use crate::bytes::BYTES_WORD;
 
 /// The value of each struct field is the index of the corresponding column.
@@ -22,7 +24,7 @@ pub(crate) struct RangeCheck<T> {
 
 /// Columns for the byte packing stark.
 #[repr(C)]
-#[derive(Clone, Debug, Default)]
+#[derive(Columns, DerefColumns, Clone, Debug)]
 pub(crate) struct ByteCols<T> {
     /// 1 if this is a write operation, 0 for a read operation.
     pub f_rw: T,
@@ -53,62 +55,4 @@ impl<T: Copy> ByteCols<T> {
 const fn make_col_map() -> ByteCols<usize> {
     let arr = crate::util::indices_arr::<N_BYTE_COLS>();
     unsafe { core::mem::transmute::<[usize; N_BYTE_COLS], ByteCols<usize>>(arr) }
-}
-
-impl<T: Copy> Borrow<ByteCols<T>> for [T; N_BYTE_COLS] {
-    fn borrow(&self) -> &ByteCols<T> {
-        unsafe { core::mem::transmute(self) }
-    }
-}
-
-impl<T: Copy> BorrowMut<ByteCols<T>> for [T; N_BYTE_COLS] {
-    fn borrow_mut(&mut self) -> &mut ByteCols<T> {
-        unsafe { core::mem::transmute(self) }
-    }
-}
-
-impl<T: Copy> Borrow<[T; N_BYTE_COLS]> for ByteCols<T> {
-    fn borrow(&self) -> &[T; N_BYTE_COLS] {
-        unsafe { core::mem::transmute(self) }
-    }
-}
-
-impl<T: Copy> BorrowMut<[T; N_BYTE_COLS]> for ByteCols<T> {
-    fn borrow_mut(&mut self) -> &mut [T; N_BYTE_COLS] {
-        unsafe { core::mem::transmute(self) }
-    }
-}
-
-impl<T: Copy, I> Index<I> for ByteCols<T>
-where
-    [T]: Index<I>,
-{
-    type Output = <[T] as Index<I>>::Output;
-    fn index(&self, i: I) -> &Self::Output {
-        let arr: &[T; N_BYTE_COLS] = self.borrow();
-        <[T] as Index<I>>::index(arr, i)
-    }
-}
-
-impl<T: Copy, I> IndexMut<I> for ByteCols<T>
-where
-    [T]: IndexMut<I>,
-{
-    fn index_mut(&mut self, i: I) -> &mut Self::Output {
-        let arr: &mut [T; N_BYTE_COLS] = self.borrow_mut();
-        <[T] as IndexMut<I>>::index_mut(arr, i)
-    }
-}
-
-impl<T: Copy> Deref for ByteCols<T> {
-    type Target = [T; N_BYTE_COLS];
-    fn deref(&self) -> &Self::Target {
-        unsafe { core::mem::transmute(self) }
-    }
-}
-
-impl<T: Copy> DerefMut for ByteCols<T> {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        unsafe { core::mem::transmute(self) }
-    }
 }
