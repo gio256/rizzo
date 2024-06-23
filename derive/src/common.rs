@@ -1,6 +1,5 @@
-use proc_macro2::Ident;
 use syn::punctuated::Punctuated;
-use syn::{token, Attribute, DeriveInput, GenericParam, Meta, Result};
+use syn::{token, Attribute, Meta};
 
 /// Prefixes an error message and generates a `syn::Error` from the message.
 macro_rules! span_err {
@@ -20,7 +19,7 @@ macro_rules! ensure {
 }
 pub(crate) use ensure;
 
-/// Parses the `Meta` of a "repr" attribute and returns true if one of the
+/// Parses the `Meta` of a `repr` attribute and returns true if one of the
 /// elements is "C".
 fn is_meta_c(outer: &Meta) -> bool {
     if let Meta::List(inner) = outer {
@@ -38,27 +37,4 @@ pub(crate) fn is_repr_c<'a>(attrs: impl IntoIterator<Item = &'a Attribute>) -> b
     attrs
         .into_iter()
         .any(|attr| attr.path().is_ident("repr") && is_meta_c(&attr.meta))
-}
-
-/// Returns the first generic type parameter or an error if none exist.
-pub(crate) fn first_generic_ty(ast: &DeriveInput) -> Result<&Ident> {
-    Ok(&ast
-        .generics
-        .type_params()
-        .next()
-        .ok_or_else(|| span_err!(&ast, "expected at least one generic type argument"))?
-        .ident)
-}
-
-/// Returns a `Vec` of generic parameters excluding `exc` and any lifetime parameters.
-pub(crate) fn generics_except<'a>(ast: &'a DeriveInput, exc: &Ident) -> Vec<&'a Ident> {
-    ast.generics
-        .params
-        .iter()
-        .filter_map(|generic| match generic {
-            GenericParam::Type(ty) if ty.ident != *exc => Some(&ty.ident),
-            GenericParam::Const(c) => Some(&c.ident),
-            _ => None,
-        })
-        .collect()
 }

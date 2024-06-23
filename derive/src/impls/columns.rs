@@ -1,196 +1,132 @@
 use quote::quote;
-use syn::punctuated::Punctuated;
-use syn::{
-    parse_quote, token, Data, DeriveInput, GenericParam, Result, WhereClause, WherePredicate,
-};
+use syn::{Data, DeriveInput, Result};
 
-use crate::common::{ensure, first_generic_ty, generics_except, is_repr_c};
+use crate::common::{ensure, is_repr_c};
 
 /// Implements `Borrow`, `BorrowMut`, `From`, `Index`, `IndexMut`, and `Default`.
 pub(crate) fn try_derive(ast: DeriveInput) -> Result<proc_macro2::TokenStream> {
-    // Make sure we're working with a struct.
     let is_struct = matches!(ast.data, Data::Struct(_));
     ensure!(is_struct, &ast, "expected `struct`");
 
-    // Safety: check that the struct is `#[repr(C)]`
+    // Check that the struct is `#[repr(C)]`
     let repr_c = is_repr_c(&ast.attrs);
     ensure!(repr_c, &ast, "column struct must be `#[repr(C)]`");
 
-    // The first generic type parameter is expected to represent a field element.
-    let felt_ty = first_generic_ty(&ast)?;
-
-    // All additional generic parameters.
-    let rest_generics = generics_except(&ast, felt_ty);
-
-    // Split all the generics, including both `felt_ty` and `rest_generics`.
-    let (impl_generics, ty_generics, where_clause) = ast.generics.split_for_impl();
-
-    // The name of our struct.
+    // The name of the struct.
     let name = &ast.ident;
 
-    // impl `Borrow`, `BorrowMut`, and `From` in both directions.
-    let convert_impls = quote! {
-        impl #impl_generics ::core::borrow::Borrow<#name #ty_generics>
-            for [#felt_ty; ::core::mem::size_of::<#name<u8 #(, #rest_generics)*>>()]
-            #where_clause
-        {
-            fn borrow(&self) -> &#name #ty_generics {
-                unsafe { ::core::mem::transmute(self) }
-            }
-        }
+    // Safety: `u8` is guaranteed to have a `size_of` of 1.
+    // https://doc.rust-lang.org/reference/type-layout.html#primitive-data-layout
+    let num_columns = quote!(::core::mem::size_of::<#name<u8>>());
 
-        impl #impl_generics ::core::borrow::BorrowMut<#name #ty_generics>
-            for [#felt_ty; ::core::mem::size_of::<#name<u8 #(, #rest_generics)*>>()]
-            #where_clause
-        {
-            fn borrow_mut(&mut self) -> &mut #name #ty_generics {
-                unsafe { ::core::mem::transmute(self) }
-            }
-        }
-
-        impl #impl_generics ::core::borrow::Borrow<
-            [#felt_ty; ::core::mem::size_of::<#name<u8 #(, #rest_generics)*>>()]
-        >
-            for #name #ty_generics
-            #where_clause
-        {
-            fn borrow(&self)
-                -> &[#felt_ty; ::core::mem::size_of::<#name<u8 #(, #rest_generics)*>>()]
-            {
-                unsafe { ::core::mem::transmute(self) }
-            }
-        }
-
-        impl #impl_generics ::core::borrow::BorrowMut<
-            [#felt_ty; ::core::mem::size_of::<#name<u8 #(, #rest_generics)*>>()]
-        >
-            for #name #ty_generics
-            #where_clause
-        {
-            fn borrow_mut(&mut self)
-                -> &mut [#felt_ty; ::core::mem::size_of::<#name<u8 #(, #rest_generics)*>>()]
-            {
-                unsafe { ::core::mem::transmute(self) }
-            }
-        }
-
-        impl #impl_generics ::core::convert::From<
-            [#felt_ty; ::core::mem::size_of::<#name<u8 #(, #rest_generics)*>>()]
-        >
-            for #name #ty_generics
-            #where_clause
-        {
-            fn from(
-                value: [#felt_ty; ::core::mem::size_of::<#name<u8 #(, #rest_generics)*>>()]
-            ) -> Self {
-                debug_assert_eq!(
-                    ::core::mem::size_of::<
-                        [#felt_ty; ::core::mem::size_of::<#name<u8 #(, #rest_generics)*>>()]
-                    >(),
-                    ::core::mem::size_of::<#name #ty_generics>()
-                );
-                // Need ManuallyDrop so that `value` is not dropped by this function.
-                let value = ::core::mem::ManuallyDrop::new(value);
-                // Copy the bit pattern. The original value is no longer safe to use.
-                unsafe { ::core::mem::transmute_copy(&value) }
-            }
-        }
-
-        impl #impl_generics ::core::convert::From<#name #ty_generics>
-            for [#felt_ty; ::core::mem::size_of::<#name<u8 #(, #rest_generics)*>>()]
-            #where_clause
-        {
-            fn from(value: #name #ty_generics) -> Self {
-                debug_assert_eq!(
-                    ::core::mem::size_of::<#name #ty_generics>(),
-                    ::core::mem::size_of::<
-                        [#felt_ty; ::core::mem::size_of::<#name<u8 #(, #rest_generics)*>>()]
-                    >()
-                );
-                // Need ManuallyDrop so that `value` is not dropped by this function.
-                let value = ::core::mem::ManuallyDrop::new(value);
-                // Copy the bit pattern. The original value is no longer safe to use.
-                unsafe { ::core::mem::transmute_copy(&value) }
-            }
-        }
-    };
-
-    // Unwrap the where clause so we can append to it.
-    let where_clause = where_clause.cloned().unwrap_or_else(|| WhereClause {
-        where_token: token::Where::default(),
-        predicates: Punctuated::new(),
-    });
-
-    // Add a generic indexing type to our `impl_generics` for Index and IndexMut.
-    let index_ty: GenericParam = parse_quote!(__II);
-    let mut all_generics = ast.generics.clone();
-    all_generics.params.push(index_ty.clone());
-    let (index_generics, _, _) = all_generics.split_for_impl();
-
-    // An empty predicate to constrain any const generics
-    let const_pred: WherePredicate =
-        parse_quote!([(); ::core::mem::size_of::<#name<u8 #(, #rest_generics)*>>()]:);
-
-    // Where clause for `Index`.
-    let index_pred = parse_quote!([#felt_ty]: ::core::ops::Index<#index_ty>);
-    let mut index_where_clause = where_clause.clone();
-    index_where_clause.predicates.push(index_pred);
-    index_where_clause.predicates.push(const_pred.clone());
-
-    // Where clause for `IndexMut`.
-    let index_mut_pred = parse_quote!([#felt_ty]: ::core::ops::IndexMut<#index_ty>);
-    let mut index_mut_where_clause = where_clause.clone();
-    index_mut_where_clause.predicates.push(index_mut_pred);
-    index_mut_where_clause.predicates.push(const_pred.clone());
-
-    // Where clause for `Default`.
-    let default_pred = parse_quote!(#felt_ty: ::core::default::Default + ::core::marker::Copy);
-    let mut default_where_clause = where_clause.clone();
-    default_where_clause.predicates.push(default_pred);
-    default_where_clause.predicates.push(const_pred.clone());
-
+    // Safety:
+    // A repr(C) struct generic over T has the same layout as an array [T; N] if:
+    // - Every field of the struct is either T or a type with the same alignment
+    //   as T and a size of `size_of::<T>() * M` where M <= N. i.e. every field
+    //   is one of T, [T; M], or a type with the same layout as [T; M].
+    // - The total number of elements of type T is N.
+    // https://doc.rust-lang.org/reference/type-layout.html#reprc-structs
+    // https://doc.rust-lang.org/reference/type-layout.html#array-layout
     Ok(quote! {
-        #convert_impls
-
-        impl #index_generics ::core::ops::Index<#index_ty> for #name #ty_generics
-            #index_where_clause
+        impl<T> ::core::borrow::Borrow<#name<T>> for [T; #num_columns]
+        where
+            T: ::core::marker::Copy,
         {
-            type Output = <[#felt_ty] as ::core::ops::Index<#index_ty>>::Output;
-
-            fn index(&self, index: #index_ty)
-                -> &<Self as ::core::ops::Index<#index_ty>>::Output
-            {
-                let arr = ::core::borrow::Borrow::<
-                        [#felt_ty; ::core::mem::size_of::<#name<u8 #(, #rest_generics)*>>()]
-                    >::borrow(self);
-                <[#felt_ty] as ::core::ops::Index<#index_ty>>::index(arr, index)
+            fn borrow(&self) -> &#name<T> {
+                unsafe { ::core::mem::transmute(self) }
             }
         }
 
-        impl #index_generics ::core::ops::IndexMut<#index_ty> for #name #ty_generics
-            #index_mut_where_clause
+        impl<T> ::core::borrow::BorrowMut<#name<T>> for [T; #num_columns]
+        where
+            T: ::core::marker::Copy,
         {
-            fn index_mut(&mut self, index: #index_ty)
-                -> &mut <Self as ::core::ops::Index<#index_ty>>::Output
-            {
-                let arr = ::core::borrow::BorrowMut::<
-                        [#felt_ty; ::core::mem::size_of::<#name<u8 #(, #rest_generics)*>>()]
-                    >::borrow_mut(self);
-                <[#felt_ty] as ::core::ops::IndexMut<#index_ty>>::index_mut(arr, index)
+            fn borrow_mut(&mut self) -> &mut #name<T> {
+                unsafe { ::core::mem::transmute(self) }
             }
         }
 
-        impl #impl_generics ::core::default::Default for #name #ty_generics
-            #default_where_clause
+        impl<T> ::core::borrow::Borrow<[T; #num_columns]> for #name<T>
+        where
+            T: ::core::marker::Copy,
+        {
+            fn borrow(&self) -> &[T; #num_columns] {
+                unsafe { ::core::mem::transmute(self) }
+            }
+        }
+
+        impl<T> ::core::borrow::BorrowMut<[T; #num_columns]> for #name<T>
+        where
+            T: ::core::marker::Copy,
+        {
+            fn borrow_mut(&mut self) -> &mut [T; #num_columns] {
+                unsafe { ::core::mem::transmute(self) }
+            }
+        }
+
+        impl<T> From<[T; #num_columns]> for #name<T>
+        where
+            T: ::core::marker::Copy,
+        {
+            fn from(value: [T; #num_columns]) -> Self {
+                debug_assert_eq!(
+                    ::core::mem::size_of::<#name<T>>(),
+                    ::core::mem::size_of::<[T; #num_columns]>()
+                );
+                // Need ManuallyDrop so that `value` is not dropped by this function.
+                let value = ::core::mem::ManuallyDrop::new(value);
+                // Copy the bit pattern. The original value is no longer safe to use.
+                unsafe { ::core::mem::transmute_copy(&value) }
+            }
+        }
+
+        impl<T> From<#name<T>> for [T; #num_columns]
+        where
+            T: ::core::marker::Copy,
+        {
+            fn from(value: #name<T>) -> Self {
+                debug_assert_eq!(
+                    ::core::mem::size_of::<#name<T>>(),
+                    ::core::mem::size_of::<[T; #num_columns]>()
+                );
+                // Need ManuallyDrop so that `value` is not dropped by this function.
+                let value = ::core::mem::ManuallyDrop::new(value);
+                // Copy the bit pattern. The original value is no longer safe to use.
+                unsafe { ::core::mem::transmute_copy(&value) }
+            }
+        }
+
+        impl<T, I> ::core::ops::Index<I> for #name<T>
+        where
+            T: ::core::marker::Copy,
+            [T]: ::core::ops::Index<I>,
+        {
+            type Output = <[T] as ::core::ops::Index<I>>::Output;
+
+            fn index(&self, index: I) -> &<Self as ::core::ops::Index<I>>::Output {
+                let arr = ::core::borrow::Borrow::<[T; #num_columns]>::borrow(self);
+                <[T] as ::core::ops::Index<I>>::index(arr, index)
+            }
+        }
+
+        impl<T, I> ::core::ops::IndexMut<I> for #name<T>
+        where
+            T: ::core::marker::Copy,
+            [T]: ::core::ops::IndexMut<I>,
+        {
+            fn index_mut(&mut self, index: I) -> &mut <Self as ::core::ops::Index<I>>::Output {
+                let arr = ::core::borrow::BorrowMut::<[T; #num_columns]>::borrow_mut(self);
+                <[T] as ::core::ops::IndexMut<I>>::index_mut(arr, index)
+            }
+        }
+
+        impl<T> ::core::default::Default for #name<T>
+        where
+            T: ::core::marker::Copy + ::core::default::Default,
         {
             fn default() -> Self {
-                <Self as ::core::convert::From<
-                    [#felt_ty; ::core::mem::size_of::<#name<u8 #(, #rest_generics)*>>()]
-                >>::from(
-                    [
-                        <#felt_ty as ::core::default::Default>::default();
-                        ::core::mem::size_of::<#name<u8 #(, #rest_generics)*>>()
-                    ]
+                ::core::convert::Into::<Self>::into(
+                    [<T as ::core::default::Default>::default(); #num_columns]
                 )
             }
         }

@@ -1,48 +1,45 @@
 use quote::quote;
 use syn::{Data, DeriveInput, Result};
 
-use crate::common::{ensure, first_generic_ty, generics_except, is_repr_c};
+use crate::common::{ensure, is_repr_c};
 
 /// Implements `Deref` and `DerefMut`.
 pub(crate) fn try_derive(ast: DeriveInput) -> Result<proc_macro2::TokenStream> {
-    // Make sure we're working with a struct.
     let is_struct = matches!(ast.data, Data::Struct(_));
     ensure!(is_struct, &ast, "expected `struct`");
 
-    // Safety: check that the struct is `#[repr(C)]`
+    // Check that the struct is `#[repr(C)]`
     let repr_c = is_repr_c(&ast.attrs);
     ensure!(repr_c, &ast, "column struct must be `#[repr(C)]`");
 
-    // The first generic type parameter is expected to represent a field element.
-    let felt_ty = first_generic_ty(&ast)?;
-
-    // All additional generic parameters.
-    let rest_generics = generics_except(&ast, felt_ty);
-
-    // Split all the generics, including both `felt_ty` and `rest_generics`.
-    let (impl_generics, ty_generics, where_clause) = ast.generics.split_for_impl();
-
-    // The name of our struct.
+    // The name of the struct.
     let name = &ast.ident;
 
+    // Safety: `u8` is guaranteed to have a `size_of` of 1.
+    // https://doc.rust-lang.org/reference/type-layout.html#primitive-data-layout
+    let num_columns = quote!(::core::mem::size_of::<#name<u8>>());
+
+    // Safety:
+    // A repr(C) struct generic over T has the same layout as an array [T; N] if:
+    // - Every field of the struct is either T or a type with the same alignment
+    //   as T and a size of `size_of::<T>() * M` where M <= N. i.e. every field
+    //   is one of T, [T; M], or a type with the same layout as [T; M].
+    // - The total number of elements of type T is N.
+    // https://doc.rust-lang.org/reference/type-layout.html#reprc-structs
+    // https://doc.rust-lang.org/reference/type-layout.html#array-layout
     Ok(quote! {
-        impl #impl_generics ::core::ops::Deref for #name #ty_generics
-            #where_clause
-        {
-            type Target = [#felt_ty; ::core::mem::size_of::<#name<u8 #(, #rest_generics)*>>()];
+        impl<T: ::core::marker::Copy> ::core::ops::Deref for #name<T> {
+            type Target = [T; #num_columns];
 
             fn deref(&self) -> &<Self as ::core::ops::Deref>::Target {
-                unsafe { core::mem::transmute(self) }
+                unsafe { ::core::mem::transmute(self) }
             }
         }
 
-        impl #impl_generics ::core::ops::DerefMut for #name #ty_generics
-            #where_clause
-        {
+        impl<T: ::core::marker::Copy> ::core::ops::DerefMut for #name<T> {
             fn deref_mut(&mut self) -> &mut <Self as ::core::ops::Deref>::Target {
-                unsafe { core::mem::transmute(self) }
+                unsafe { ::core::mem::transmute(self) }
             }
-
         }
     })
 }
