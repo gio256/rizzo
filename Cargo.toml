@@ -21,3 +21,10 @@ rizzo_derive = { path = "derive" }
 [dev-dependencies]
 rand = "0.8.5"
 paste = "1.0"
+
+# TODO: remove
+# [patch."https://github.com/0xPolygonZero/plonky2"]
+# plonky2 = { path = "../ext/plonky2/plonky2"}
+# plonky2_maybe_rayon = { path = "../ext/plonky2/maybe_rayon"}
+# plonky2_util = { path = "../ext/plonky2/util"}
+# starky = { path = "../ext/plonky2/starky"}
