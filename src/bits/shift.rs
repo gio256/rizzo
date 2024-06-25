@@ -76,8 +76,6 @@ fn sra_ext<P: PackedField>(bits: &[P; WORD_BITS], shift_amt: &[P; WORD_BITS]) ->
         .sum()
 }
 
-/// Constraints for AND, OR, and XOR from
-/// [zk_evm](https://github.com/0xPolygonZero/zk_evm/blob/677dc0dc066d15209773ce1e7c990df8a845da98/evm_arithmetization/src/logic.rs#L310).
 pub(crate) fn eval<P: PackedField>(lv: &BitCols<P>, cc: &mut ConstraintConsumer<P>) {
     let f_sll = lv.op.f_sll;
     let f_srl = lv.op.f_srl;
