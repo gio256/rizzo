@@ -8,7 +8,6 @@ readme = "README.md"
 categories = ["cryptography", "emulators"]
 
 [dependencies]
-anyhow = "1.0.86"
 hashbrown = "0.14.0"
 plonky2 = { git = "https://github.com/0xPolygonZero/plonky2.git", rev = "7ba3c1f298faddb99543b59fe24d898f092f78e8" }
 plonky2_maybe_rayon = { git = "https://github.com/0xPolygonZero/plonky2.git", rev = "7ba3c1f298faddb99543b59fe24d898f092f78e8" }
