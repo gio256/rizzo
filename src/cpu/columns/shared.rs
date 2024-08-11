@@ -4,6 +4,7 @@ use core::fmt::{Debug, Formatter};
 pub(crate) const N_SHARED_COLS: usize = core::mem::size_of::<SharedCols<u8>>();
 
 /// Columns intended to be shared, but currently only used by branching ops.
+#[repr(C)]
 #[derive(Clone, Copy)]
 pub(crate) union SharedCols<T: Copy> {
     branch: BranchCols<T>,
@@ -18,6 +19,7 @@ impl<T: Copy> SharedCols<T> {
     }
 }
 
+#[repr(C)]
 #[derive(Clone, Copy, Debug)]
 pub(crate) struct BranchCols<T> {
     pub f_take_branch: T,
